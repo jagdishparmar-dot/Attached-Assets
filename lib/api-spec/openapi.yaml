@@ -1028,6 +1028,9 @@ components:
           type: ["string", "null"]
         temperature:
           type: ["string", "null"]
+        amount:
+          type: ["number", "null"]
+          description: Unit price / amount for this product line
 
     DeliveryInput:
       type: object

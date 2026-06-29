@@ -271,6 +271,11 @@ export interface DeliveryProduct {
   weight?: string | null;
   /** @nullable */
   temperature?: string | null;
+  /**
+     * Unit price / amount for this product line
+     * @nullable
+     */
+  amount?: number | null;
 }
 
 export interface Delivery {

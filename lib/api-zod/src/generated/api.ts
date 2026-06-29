@@ -79,7 +79,8 @@ export const ListDeliveriesResponseItem = zod.object({
   "name": zod.string(),
   "quantity": zod.number(),
   "weight": zod.string().nullish(),
-  "temperature": zod.string().nullish()
+  "temperature": zod.string().nullish(),
+  "amount": zod.number().nullish().describe('Unit price \/ amount for this product line')
 })),
   "assignedDriverId": zod.number().nullish(),
   "assignedDriverName": zod.string().nullish(),
@@ -111,7 +112,8 @@ export const CreateDeliveryBody = zod.object({
   "name": zod.string(),
   "quantity": zod.number(),
   "weight": zod.string().nullish(),
-  "temperature": zod.string().nullish()
+  "temperature": zod.string().nullish(),
+  "amount": zod.number().nullish().describe('Unit price \/ amount for this product line')
 }))
 })
 
@@ -137,7 +139,8 @@ export const CreateDeliveryResponse = zod.object({
   "name": zod.string(),
   "quantity": zod.number(),
   "weight": zod.string().nullish(),
-  "temperature": zod.string().nullish()
+  "temperature": zod.string().nullish(),
+  "amount": zod.number().nullish().describe('Unit price \/ amount for this product line')
 })),
   "assignedDriverId": zod.number().nullish(),
   "assignedDriverName": zod.string().nullish(),
@@ -178,7 +181,8 @@ export const GetDeliveryResponse = zod.object({
   "name": zod.string(),
   "quantity": zod.number(),
   "weight": zod.string().nullish(),
-  "temperature": zod.string().nullish()
+  "temperature": zod.string().nullish(),
+  "amount": zod.number().nullish().describe('Unit price \/ amount for this product line')
 })),
   "assignedDriverId": zod.number().nullish(),
   "assignedDriverName": zod.string().nullish(),
@@ -230,7 +234,8 @@ export const UpdateDeliveryResponse = zod.object({
   "name": zod.string(),
   "quantity": zod.number(),
   "weight": zod.string().nullish(),
-  "temperature": zod.string().nullish()
+  "temperature": zod.string().nullish(),
+  "amount": zod.number().nullish().describe('Unit price \/ amount for this product line')
 })),
   "assignedDriverId": zod.number().nullish(),
   "assignedDriverName": zod.string().nullish(),

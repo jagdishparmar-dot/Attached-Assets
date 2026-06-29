@@ -51,10 +51,10 @@ export default function DeliveryNew() {
     }));
   };
 
-  const [products, setProducts] = useState([{ name: "", quantity: 1, weight: "", temperature: "" }]);
+  const [products, setProducts] = useState([{ name: "", quantity: 1, weight: "", temperature: "", amount: "" }]);
 
   const addProduct = () => {
-    setProducts([...products, { name: "", quantity: 1, weight: "", temperature: "" }]);
+    setProducts([...products, { name: "", quantity: 1, weight: "", temperature: "", amount: "" }]);
   };
 
   const removeProduct = (index: number) => {
@@ -96,7 +96,8 @@ export default function DeliveryNew() {
           name: p.name,
           quantity: Number(p.quantity),
           weight: p.weight || undefined,
-          temperature: p.temperature || undefined
+          temperature: p.temperature || undefined,
+          amount: p.amount ? Number(p.amount) : undefined,
         }))
       }
     }, {
@@ -253,34 +254,79 @@ export default function DeliveryNew() {
               <Plus className="h-4 w-4 mr-2" /> Add Product
             </Button>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {products.map((product, index) => (
-              <div key={index} className="flex items-start gap-4 p-4 border rounded-md relative">
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label>Name *</Label>
-                    <Input required value={product.name} onChange={e => updateProduct(index, "name", e.target.value)} />
+          <CardContent className="space-y-3">
+            {products.map((product, index) => {
+              const lineTotal = product.amount && product.quantity
+                ? (Number(product.amount) * Number(product.quantity)).toFixed(2)
+                : null;
+              return (
+                <div key={index} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Product {index + 1}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      {lineTotal && (
+                        <span className="text-sm font-semibold text-primary">
+                          Line Total: ₹{lineTotal}
+                        </span>
+                      )}
+                      {products.length > 1 && (
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeProduct(index)} className="text-destructive h-7 w-7">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Quantity *</Label>
-                    <Input type="number" min="1" required value={product.quantity} onChange={e => updateProduct(index, "quantity", parseInt(e.target.value))} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div className="space-y-1.5 lg:col-span-2">
+                      <Label className="text-xs">Product Name *</Label>
+                      <Input required value={product.name} onChange={e => updateProduct(index, "name", e.target.value)} placeholder="e.g. Frozen Peas 1kg" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Quantity *</Label>
+                      <Input type="number" min="1" required value={product.quantity} onChange={e => updateProduct(index, "quantity", parseInt(e.target.value))} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Unit Amount (₹)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={product.amount}
+                        onChange={e => updateProduct(index, "amount", e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Weight</Label>
+                      <Input value={product.weight} onChange={e => updateProduct(index, "weight", e.target.value)} placeholder="e.g. 10kg" />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Weight</Label>
-                    <Input value={product.weight} onChange={e => updateProduct(index, "weight", e.target.value)} placeholder="e.g. 10kg" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Temperature</Label>
-                    <Input value={product.temperature} onChange={e => updateProduct(index, "temperature", e.target.value)} placeholder="e.g. -18C" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Temperature</Label>
+                      <Input value={product.temperature} onChange={e => updateProduct(index, "temperature", e.target.value)} placeholder="e.g. -18°C" />
+                    </div>
                   </div>
                 </div>
-                {products.length > 1 && (
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeProduct(index)} className="text-destructive mt-8">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
+              );
+            })}
+
+            {(() => {
+              const grandTotal = products.reduce((sum, p) => {
+                const line = p.amount && p.quantity ? Number(p.amount) * Number(p.quantity) : 0;
+                return sum + line;
+              }, 0);
+              return grandTotal > 0 ? (
+                <div className="flex justify-end border-t pt-3 mt-1">
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg px-5 py-2.5 text-right">
+                    <p className="text-xs text-muted-foreground mb-0.5">Grand Total</p>
+                    <p className="text-xl font-bold text-primary">₹{grandTotal.toFixed(2)}</p>
+                  </div>
+                </div>
+              ) : null;
+            })()}
           </CardContent>
         </Card>
 

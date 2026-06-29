@@ -41,7 +41,7 @@ function formatDelivery(d: typeof deliveriesTable.$inferSelect) {
     totalWeight: d.totalWeight,
     specialHandling: d.specialHandling ?? null,
     remarks: d.remarks ?? null,
-    products: (d.products as Array<{ name: string; quantity: number; weight?: string; temperature?: string }>) ?? [],
+    products: (d.products as Array<{ name: string; quantity: number; weight?: string; temperature?: string; amount?: number | null }>) ?? [],
     assignedDriverId: d.assignedDriverId ?? null,
     assignedDriverName: d.assignedDriverName ?? null,
     assignedVehicleId: d.assignedVehicleId ?? null,
