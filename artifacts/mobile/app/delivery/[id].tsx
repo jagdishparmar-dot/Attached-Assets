@@ -30,12 +30,10 @@ export default function DeliveryDetailScreen() {
 
   const delivery = deliveries.find((d) => d.id === id);
 
-  const [otpInput, setOtpInput] = useState("");
-  const [otpVerified, setOtpVerified] = useState(false);
   const [remarks, setRemarks] = useState(delivery?.remarks ?? "");
   const [failReason, setFailReason] = useState("");
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"info" | "pod" | "otp">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "pod" | "status">("info");
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -48,18 +46,6 @@ export default function DeliveryDetailScreen() {
       </View>
     );
   }
-
-  const verifyOtp = () => {
-    if (otpInput === delivery.otp) {
-      setOtpVerified(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("OTP Verified", "Customer OTP verified successfully.");
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Invalid OTP", "The OTP you entered is incorrect. Please try again.");
-      setOtpInput("");
-    }
-  };
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -90,11 +76,6 @@ export default function DeliveryDetailScreen() {
   };
 
   const markStatus = async (status: DeliveryStatus) => {
-    if (status === "delivered" && !otpVerified && delivery.status !== "delivered") {
-      Alert.alert("OTP Required", "Please verify the customer OTP before marking as delivered.");
-      setActiveTab("otp");
-      return;
-    }
     setLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     await updateDeliveryStatus(delivery.id, status, {
@@ -128,14 +109,14 @@ export default function DeliveryDetailScreen() {
       </View>
 
       <View style={[styles.tabs, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        {(["info", "pod", "otp"] as const).map((tab) => (
+        {(["info", "pod", "status"] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && { borderBottomColor: colors.primary }]}
             onPress={() => setActiveTab(tab)}
           >
             <Text style={[styles.tabText, { color: activeTab === tab ? colors.primary : colors.mutedForeground }]}>
-              {tab === "info" ? "Details" : tab === "pod" ? `POD (${delivery.podPhotos.length})` : "OTP / Status"}
+              {tab === "info" ? "Details" : tab === "pod" ? `POD (${delivery.podPhotos.length})` : "Status"}
             </Text>
           </TouchableOpacity>
         ))}
@@ -267,42 +248,9 @@ export default function DeliveryDetailScreen() {
             </>
           )}
 
-          {activeTab === "otp" && (
+          {activeTab === "status" && (
             <>
-              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={styles.otpHeader}>
-                  <MaterialIcons name={otpVerified ? "check-circle" : "lock"} size={28} color={otpVerified ? "#16A34A" : colors.secondary} />
-                  <View>
-                    <Text style={[styles.cardTitle, { color: colors.foreground, marginBottom: 0 }]}>OTP Verification</Text>
-                    <Text style={[styles.otpSub, { color: colors.mutedForeground }]}>
-                      {otpVerified ? "Verified successfully" : "Get OTP from customer"}
-                    </Text>
-                  </View>
-                </View>
-                {!otpVerified && (
-                  <>
-                    <TextInput
-                      style={[styles.otpInput, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.muted }]}
-                      value={otpInput}
-                      onChangeText={setOtpInput}
-                      placeholder="Enter 4-digit OTP"
-                      placeholderTextColor={colors.mutedForeground}
-                      keyboardType="numeric"
-                      maxLength={4}
-                    />
-                    <TouchableOpacity
-                      style={[styles.verifyBtn, { backgroundColor: colors.secondary }]}
-                      onPress={verifyOtp}
-                      disabled={otpInput.length !== 4}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={styles.verifyBtnText}>Verify OTP</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
-              </View>
-
-              {delivery.status !== "delivered" && delivery.status !== "failed" && (
+              {delivery.status !== "delivered" && delivery.status !== "failed" ? (
                 <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <Text style={[styles.cardTitle, { color: colors.foreground }]}>Update Status</Text>
 
@@ -347,6 +295,29 @@ export default function DeliveryDetailScreen() {
                     <MaterialIcons name="cancel" size={20} color="#DC2626" />
                     <Text style={[styles.statusBtnText, { color: "#DC2626" }]}>Mark as Failed</Text>
                   </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={{ alignItems: "center", paddingVertical: 20, gap: 10 }}>
+                    <MaterialIcons
+                      name={delivery.status === "delivered" ? "check-circle" : "cancel"}
+                      size={48}
+                      color={delivery.status === "delivered" ? "#16A34A" : "#DC2626"}
+                    />
+                    <Text style={[styles.cardTitle, { color: colors.foreground, marginBottom: 0 }]}>
+                      {delivery.status === "delivered" ? "Delivery Completed" : "Delivery Failed"}
+                    </Text>
+                    {delivery.completedAt && (
+                      <Text style={{ color: colors.mutedForeground, fontSize: 13, fontFamily: "Inter_400Regular" }}>
+                        {new Date(delivery.completedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                      </Text>
+                    )}
+                    {delivery.failureReason && (
+                      <Text style={{ color: colors.mutedForeground, fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" }}>
+                        {delivery.failureReason}
+                      </Text>
+                    )}
+                  </View>
                 </View>
               )}
             </>
@@ -407,11 +378,6 @@ const styles = StyleSheet.create({
   podPhoto: { width: "48%", aspectRatio: 1, borderRadius: 10 },
   emptyPod: { alignItems: "center", paddingVertical: 40, borderWidth: 1.5, borderStyle: "dashed", borderRadius: 14, gap: 8 },
   emptyPodText: { fontSize: 14, fontFamily: "Inter_500Medium" },
-  otpHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
-  otpSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
-  otpInput: { borderWidth: 1.5, borderRadius: 12, padding: 16, fontSize: 22, fontFamily: "Inter_700Bold", textAlign: "center", letterSpacing: 8, marginBottom: 12 },
-  verifyBtn: { paddingVertical: 13, borderRadius: 12, alignItems: "center" },
-  verifyBtnText: { color: "#fff", fontSize: 15, fontFamily: "Inter_700Bold" },
   statusBtn: { flexDirection: "row", alignItems: "center", gap: 10, padding: 14, borderRadius: 12, marginBottom: 8 },
   statusBtnText: { fontSize: 15, fontFamily: "Inter_700Bold" },
 });
