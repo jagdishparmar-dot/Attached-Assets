@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Sparkles } from "lucide-react";
 
 export default function DeliveryNew() {
   const [, navigate] = useLocation();
@@ -29,6 +29,18 @@ export default function DeliveryNew() {
     specialHandling: "",
     remarks: "",
   });
+
+  const handleCustomerChange = (customerId: string) => {
+    const customer = customers?.find((c) => c.id.toString() === customerId);
+    setFormData((prev) => ({
+      ...prev,
+      customerId,
+      deliveryAddress: customer?.address ?? prev.deliveryAddress,
+      deliveryArea: customer?.area ?? prev.deliveryArea,
+      deliveryCity: customer?.city ?? prev.deliveryCity,
+      deliveryWindow: customer?.deliveryWindow ?? prev.deliveryWindow,
+    }));
+  };
 
   const [products, setProducts] = useState([{ name: "", quantity: 1, weight: "", temperature: "" }]);
 
@@ -107,13 +119,16 @@ export default function DeliveryNew() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Customer *</Label>
-                <Select disabled={customersLoading} value={formData.customerId} onValueChange={(v) => setFormData({...formData, customerId: v})}>
+                <Select disabled={customersLoading} value={formData.customerId} onValueChange={handleCustomerChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Customer" />
+                    <SelectValue placeholder={customersLoading ? "Loading customers…" : "Select Customer"} />
                   </SelectTrigger>
                   <SelectContent>
                     {customers?.map(c => (
-                      <SelectItem key={c.id} value={c.id.toString()}>{c.companyName}</SelectItem>
+                      <SelectItem key={c.id} value={c.id.toString()}>
+                        <span className="font-medium">{c.companyName}</span>
+                        <span className="ml-2 text-muted-foreground text-xs">{c.customerCode}</span>
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -149,19 +164,54 @@ export default function DeliveryNew() {
               </div>
             </div>
 
+            {formData.customerId && (() => {
+              const c = customers?.find(x => x.id.toString() === formData.customerId);
+              return c ? (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200 text-sm">
+                  <Sparkles className="h-4 w-4 text-green-600 shrink-0" />
+                  <span className="text-green-800">
+                    Address auto-filled from <strong>{c.companyName}</strong>
+                    {c.contactPerson ? ` · ${c.contactPerson}` : ""}
+                    {c.phone ? ` · ${c.phone}` : ""}
+                  </span>
+                </div>
+              ) : null;
+            })()}
+
             <div className="space-y-2 pt-2">
-              <Label>Delivery Address *</Label>
-              <Textarea required value={formData.deliveryAddress} onChange={e => setFormData({...formData, deliveryAddress: e.target.value})} />
+              <div className="flex items-center gap-2">
+                <Label>Delivery Address *</Label>
+                {formData.deliveryAddress && formData.customerId && (
+                  <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" /> Auto-filled
+                  </span>
+                )}
+              </div>
+              <Textarea required value={formData.deliveryAddress} onChange={e => setFormData({...formData, deliveryAddress: e.target.value})} className={formData.deliveryAddress && formData.customerId ? "border-green-300 bg-green-50/30 focus-visible:ring-green-400" : ""} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>City *</Label>
-                <Input required value={formData.deliveryCity} onChange={e => setFormData({...formData, deliveryCity: e.target.value})} />
+                <div className="flex items-center gap-2">
+                  <Label>City *</Label>
+                  {formData.deliveryCity && formData.customerId && (
+                    <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" /> Auto-filled
+                    </span>
+                  )}
+                </div>
+                <Input required value={formData.deliveryCity} onChange={e => setFormData({...formData, deliveryCity: e.target.value})} className={formData.deliveryCity && formData.customerId ? "border-green-300 bg-green-50/30 focus-visible:ring-green-400" : ""} />
               </div>
               <div className="space-y-2">
-                <Label>Area</Label>
-                <Input value={formData.deliveryArea} onChange={e => setFormData({...formData, deliveryArea: e.target.value})} />
+                <div className="flex items-center gap-2">
+                  <Label>Area</Label>
+                  {formData.deliveryArea && formData.customerId && (
+                    <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" /> Auto-filled
+                    </span>
+                  )}
+                </div>
+                <Input value={formData.deliveryArea} onChange={e => setFormData({...formData, deliveryArea: e.target.value})} className={formData.deliveryArea && formData.customerId ? "border-green-300 bg-green-50/30 focus-visible:ring-green-400" : ""} />
               </div>
             </div>
           </CardContent>
