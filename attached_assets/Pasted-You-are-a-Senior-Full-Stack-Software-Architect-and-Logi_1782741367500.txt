@@ -1,0 +1,787 @@
+You are a Senior Full Stack Software Architect and Logistics Product Engineer.
+
+Build a production-ready enterprise Delivery Management System for Coldverse Supply Chain Pvt. Ltd.
+
+The application must be modern, scalable, responsive, secure, and optimized for Android, Web, and future iOS support.
+
+Technology Stack
+
+Frontend
+
+React
+TypeScript
+Tailwind CSS
+Material UI
+React Query
+React Router
+
+Backend
+
+Node.js
+Express.js
+PostgreSQL
+Prisma ORM
+
+Authentication
+
+JWT
+Refresh Token
+Role Based Access Control
+
+Maps
+
+Google Maps API
+GPS Tracking
+Route Optimization
+
+AI
+
+Google Gemini API
+OpenAI API (optional)
+
+Storage
+
+Firebase Storage
+or
+AWS S3
+
+Notification
+
+Firebase Push Notification
+WhatsApp API Ready
+SMS Ready
+
+Architecture
+
+Modular Architecture
+REST API
+Production Ready
+Clean Code
+MVC Pattern
+User Roles
+1. Super Admin
+
+Can manage everything
+
+Permissions
+
+Company Settings
+User Management
+Driver Management
+Vehicle Management
+Customer Management
+Warehouse Management
+Route Management
+Delivery Management
+Analytics
+Reports
+AI Dashboard
+Attendance
+POD
+Live Tracking
+2. Admin
+
+Can
+
+Create Delivery
+Assign Driver
+Allocate Vehicle
+Dispatch Order
+Track Driver
+Generate Reports
+View POD
+Customer Management
+3. Dispatcher
+
+Can
+
+Create Daily Trips
+
+Assign Driver
+
+Assign Vehicle
+
+AI Route Planning
+
+Trip Start
+
+Trip Complete
+
+Delay Management
+
+Vehicle Tracking
+
+4. Driver
+
+Android App
+
+Features
+
+Driver Login
+
+Attendance
+
+GPS Permission
+
+Location Sharing
+
+Assigned Deliveries
+
+Today's Route
+
+Navigation
+
+OTP Verification
+
+Upload POD
+
+Take Scanner Camera Photo
+
+Customer Signature
+
+Remarks
+
+Complete Delivery
+
+Offline Mode
+
+Modules
+Dashboard
+
+Today's Deliveries
+
+Pending
+
+Completed
+
+Failed
+
+In Transit
+
+Vehicle Status
+
+Driver Status
+
+Attendance
+
+Revenue
+
+Distance
+
+Fuel Estimate
+
+AI Suggestions
+
+Driver Master
+
+Driver ID
+
+Driver Name
+
+Mobile
+
+License Number
+
+License Expiry
+
+Photo
+
+Address
+
+Emergency Contact
+
+Aadhaar
+
+PAN
+
+Joining Date
+
+Status
+
+Attendance History
+
+Vehicle Master
+
+Vehicle Number
+
+Vehicle Type
+
+Capacity
+
+Fuel Type
+
+GPS Device ID
+
+Insurance
+
+Fitness
+
+RC
+
+PUC
+
+Permit
+
+Owner
+
+Current Driver
+
+Vehicle Status
+
+Maintenance Due
+
+Customer Master
+
+Customer Code
+
+Company Name
+
+Address
+
+GPS Location
+
+Contact Person
+
+Phone
+
+Email
+
+Delivery Window
+
+Special Instructions
+
+Warehouse Master
+
+Warehouse
+
+Address
+
+Manager
+
+Capacity
+
+Cold Storage Temperature
+
+Delivery Creation
+
+Delivery Number Auto Generate
+
+Order Number
+
+Invoice Number
+
+Customer
+
+Warehouse
+
+Delivery Address
+
+Latitude
+
+Longitude
+
+Product Details
+
+Quantity
+
+Weight
+
+Volume
+
+Priority
+
+Vehicle Type
+
+Special Handling
+
+Delivery Date
+
+Delivery Slot
+
+Remarks
+
+AI Route Planning
+
+Use Google Maps API
+
+Optimize
+
+Shortest Distance
+
+Least Time
+
+Traffic
+
+Vehicle Capacity
+
+Delivery Time Slot
+
+Fuel Saving
+
+AI should generate
+
+Best Route
+
+ETA
+
+Fuel Estimate
+
+Distance
+
+Stop Sequence
+
+Traffic Alerts
+
+Alternative Route
+
+Delivery Allocation
+
+Auto Allocation
+
+Manual Allocation
+
+Based on
+
+Driver Availability
+
+Vehicle Capacity
+
+Vehicle Location
+
+Customer Priority
+
+Delivery Time
+
+Live Tracking
+
+Track Driver
+
+Track Vehicle
+
+Every 10 Seconds GPS Update
+
+Show
+
+Current Speed
+
+Battery %
+
+Network
+
+Last Sync
+
+Current Stop
+
+ETA
+
+Completed Stops
+
+Remaining Stops
+
+Driver Attendance
+
+Login Attendance
+
+GPS
+
+Selfie
+
+Face Verification Ready
+
+Time
+
+Location
+
+Check In
+
+Check Out
+
+Break
+
+Working Hours
+
+Late Arrival
+
+Attendance Report
+
+Driver Mobile App
+
+Login
+
+Dashboard
+
+Attendance
+
+Today's Deliveries
+
+Navigation
+
+Google Maps
+
+Customer Details
+
+Call Customer
+
+OTP Verification
+
+POD Upload
+
+Signature
+
+Barcode Scanner
+
+QR Scanner
+
+Offline Sync
+
+Dark Mode
+
+Hindi
+
+English
+
+Gujarati
+
+POD Module
+
+Upload
+
+Multiple Photos
+
+Scanner Camera
+
+Document Scanner
+
+Customer Signature
+
+OTP
+
+Geo Location
+
+Time Stamp
+
+Date
+
+Remarks
+
+Audio Note
+
+Delivery Status
+
+Delivered
+
+Partially Delivered
+
+Failed
+
+Rescheduled
+
+Damage
+
+Reason
+
+Dispatch Module
+
+Trip Creation
+
+Trip Sheet
+
+Vehicle Allocation
+
+Driver Allocation
+
+Loading Confirmation
+
+Departure
+
+Arrival
+
+Trip Closing
+
+Inventory Integration Ready
+
+Pickup
+
+Warehouse Stock
+
+Loading
+
+Unloading
+
+Shortage
+
+Damage
+
+Return Material
+
+Reports
+
+Delivery Report
+
+Driver Performance
+
+Vehicle Utilization
+
+Attendance
+
+Late Delivery
+
+Customer Report
+
+Fuel Estimate
+
+Trip Report
+
+POD Report
+
+Failed Delivery
+
+Revenue Dashboard
+
+AI Analytics Dashboard
+
+Gemini AI
+
+Generate
+
+Daily Summary
+
+Weekly Summary
+
+Monthly Summary
+
+Driver Performance Analysis
+
+Vehicle Performance
+
+Fuel Analysis
+
+Customer Analysis
+
+Delay Prediction
+
+Risk Prediction
+
+Route Suggestion
+
+Inventory Suggestion
+
+Chat With Data
+
+Upload Excel
+
+Generate Dashboard Automatically
+
+Generate Charts Automatically
+
+Ask Questions
+
+Example
+
+Which driver delivered maximum orders?
+
+Which vehicle consumed maximum distance?
+
+Pending deliveries today
+
+Late deliveries
+
+Notification
+
+Driver Assigned
+
+Trip Started
+
+Trip Completed
+
+Customer Delivery
+
+Late Delivery
+
+Vehicle Delay
+
+Attendance Missing
+
+Search
+
+Global Search
+
+Delivery Number
+
+Vehicle
+
+Driver
+
+Customer
+
+Invoice
+
+Order Number
+
+Barcode
+
+Barcode Scanner
+
+QR Scanner
+
+Generate Barcode
+
+Scan Invoice
+
+Scan DC
+
+Security
+
+JWT
+
+Encrypted Password
+
+HTTPS
+
+Audit Logs
+
+Role Permission
+
+Activity Logs
+
+IP Logs
+
+Session Logs
+
+Dashboard UI
+
+Modern Logistics Theme
+
+Blue
+
+White
+
+Dark Gray
+
+Glass Cards
+
+Material Icons
+
+Animated Charts
+
+Responsive
+
+Professional
+
+Required Pages
+
+Login
+
+Forgot Password
+
+Dashboard
+
+Drivers
+
+Vehicles
+
+Customers
+
+Warehouses
+
+Deliveries
+
+Dispatch
+
+Attendance
+
+Trips
+
+Tracking
+
+Reports
+
+Analytics
+
+Settings
+
+Profile
+
+Mobile App UI
+
+Bottom Navigation
+
+Large Buttons
+
+One Hand Friendly
+
+Offline Ready
+
+Fast Loading
+
+Large Camera Button
+
+Scanner Mode
+
+GPS Indicator
+
+Battery Indicator
+
+Network Indicator
+
+APIs
+
+Build complete REST APIs for every module.
+
+Database
+
+Create complete PostgreSQL schema with
+
+Relationships
+
+Indexes
+
+Constraints
+
+Migration
+
+Seed Data
+
+Deliverables
+
+Generate
+
+✔ Complete Folder Structure
+
+✔ Database Schema
+
+✔ Backend APIs
+
+✔ Frontend UI
+
+✔ Android Responsive App
+
+✔ Driver App
+
+✔ Admin Panel
+
+✔ Dispatcher Panel
+
+✔ Authentication
+
+✔ Live GPS Tracking
+
+✔ AI Route Optimization
+
+✔ POD Upload
+
+✔ Reports
+
+✔ AI Analytics
+
+✔ Documentation
+
+✔ Installation Guide
+
+✔ Docker Support
+
+✔ Environment Variables
+
+✔ Production Deployment Guide
+
+The application must look like an enterprise product similar to Onfleet, Tookan, FarEye, Locus, Delhivery Dispatch System, and Porter Enterprise, but branded entirely as Coldverse Supply Chain Pvt. Ltd. The code should be clean, modular, scalable, well-documented, and production-ready with no placeholder implementations. All features should be fully functional, mobile-friendly, and optimized for future expansion into warehouse, inventory, and transport management modules.
