@@ -63,10 +63,15 @@ function MenuItem({ label, icon, color, onPress }: MenuItemProps) {
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { driver, logout } = useAuth();
+  const { staff, logout } = useAuth();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : 0;
+
+  const ROLE_LABELS: Record<string, string> = {
+    driver: "Driver", picker: "Picker", sorter: "Sorter",
+    loader: "Loader", supervisor: "Supervisor", security: "Security Guard",
+  };
 
   const handleLogout = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -80,7 +85,7 @@ export default function ProfileScreen() {
     );
   };
 
-  if (!driver) return null;
+  if (!staff) return null;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -88,15 +93,15 @@ export default function ProfileScreen() {
         <View style={styles.avatarRow}>
           <View style={[styles.avatar, { backgroundColor: "#2E6BE6" }]}>
             <Text style={styles.avatarText}>
-              {driver.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+              {staff.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
             </Text>
           </View>
           <View style={styles.avatarInfo}>
-            <Text style={styles.driverName}>{driver.name}</Text>
-            <Text style={styles.employeeId}>{driver.employeeId}</Text>
+            <Text style={styles.driverName}>{staff.name}</Text>
+            <Text style={styles.employeeId}>{staff.employeeId}</Text>
             <View style={styles.activeBadge}>
               <View style={styles.greenDot} />
-              <Text style={styles.activeText}>Active Driver</Text>
+              <Text style={styles.activeText}>{ROLE_LABELS[staff.role] ?? staff.role}</Text>
             </View>
           </View>
         </View>
@@ -107,22 +112,32 @@ export default function ProfileScreen() {
         contentContainerStyle={{ paddingBottom: botPad + 100 }}
       >
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Driver Information</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Staff Information</Text>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <ProfileRow label="Employee ID" value={driver.employeeId} icon="badge" />
-            <ProfileRow label="Mobile" value={driver.phone} icon="phone" />
-            <ProfileRow label="License No." value={driver.license} icon="card-membership" />
-            <ProfileRow label="License Expiry" value={driver.licenseExpiry} icon="event" />
-            <ProfileRow label="Joining Date" value={driver.joiningDate} icon="calendar-today" />
+            <ProfileRow label="Employee ID" value={staff.employeeId} icon="badge" />
+            <ProfileRow label="Mobile" value={staff.phone} icon="phone" />
+            <ProfileRow label="Role" value={ROLE_LABELS[staff.role] ?? staff.role} icon="work" />
+            <ProfileRow label="Joining Date" value={staff.joiningDate} icon="calendar-today" />
           </View>
         </View>
 
+        {staff.role === "driver" && staff.licenseNumber && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Driver Details</Text>
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <ProfileRow label="License No." value={staff.licenseNumber} icon="card-membership" />
+              {staff.licenseExpiry && <ProfileRow label="License Expiry" value={staff.licenseExpiry} icon="event" />}
+            </View>
+          </View>
+        )}
+
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Vehicle & Hub</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Hub & Shift</Text>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <ProfileRow label="Vehicle" value={driver.vehicle} icon="local-shipping" />
-            <ProfileRow label="Type" value={driver.vehicleType} icon="category" />
-            <ProfileRow label="Hub" value={driver.hub} icon="warehouse" />
+            <ProfileRow label="Hub" value={staff.hub} icon="warehouse" />
+            {staff.shiftStart && staff.shiftEnd && (
+              <ProfileRow label="Shift" value={`${staff.shiftStart} – ${staff.shiftEnd}`} icon="schedule" />
+            )}
           </View>
         </View>
 
@@ -149,7 +164,7 @@ export default function ProfileScreen() {
         </View>
 
         <Text style={[styles.version, { color: colors.mutedForeground }]}>
-          Coldverse Driver App v1.0.0
+          Coldverse Staff App v2.0.0
         </Text>
       </ScrollView>
     </View>

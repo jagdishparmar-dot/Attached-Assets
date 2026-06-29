@@ -1,1 +1,3 @@
 - [Coldverse project](coldverse-project.md) — DMS with Expo Driver App (mobile) + React/Vite Admin Panel (admin) + Express API server; DB provisioned with 5 tables; OTP removed from driver app.
+- [Orval hooks options shape](orval-hooks-options.md) — generated hooks don't accept bare `{ refetchInterval }` without `queryKey`; omit or pass full shape.
+- [expo-location accuracy null](expo-location-accuracy.md) — `LocationCoords.accuracy` is `number | null`; always use `?? 0` when assigning to a `number` field.

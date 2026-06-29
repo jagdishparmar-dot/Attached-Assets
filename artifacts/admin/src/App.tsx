@@ -16,6 +16,8 @@ import VehicleNew from "@/pages/vehicle-new";
 import Customers from "@/pages/customers";
 import CustomerNew from "@/pages/customer-new";
 import CustomerDetail from "@/pages/customer-detail";
+import Staff from "@/pages/staff";
+import Tracking from "@/pages/tracking";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -47,6 +49,9 @@ function Router() {
         <Route path="/admin/customers/new" component={CustomerNew} />
         <Route path="/admin/customers/:id" component={CustomerDetail} />
         <Route path="/admin/customers" component={Customers} />
+
+        <Route path="/admin/staff" component={Staff} />
+        <Route path="/admin/tracking" component={Tracking} />
         
         <Route component={NotFound} />
       </Switch>

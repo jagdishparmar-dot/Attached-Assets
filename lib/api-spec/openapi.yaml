@@ -20,6 +20,14 @@ tags:
     description: Vehicle management
   - name: customers
     description: Customer management
+  - name: staff
+    description: Staff management (all roles)
+  - name: attendance
+    description: Attendance with geo-fencing
+  - name: locations
+    description: Live GPS tracking
+  - name: hubs
+    description: Warehouse/hub management
 
 paths:
   /healthz:
@@ -330,6 +338,305 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Customer"
+
+  # ── Staff ─────────────────────────────────────────────────────
+  /staff/login:
+    post:
+      operationId: staffLogin
+      tags: [staff]
+      summary: Authenticate a staff member (mobile app login)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffLoginInput"
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffAuthResult"
+        "401":
+          description: Invalid credentials
+
+  /staff:
+    get:
+      operationId: listStaff
+      tags: [staff]
+      summary: List all staff members
+      parameters:
+        - in: query
+          name: role
+          schema:
+            type: string
+            enum: [driver, picker, sorter, loader, supervisor, security]
+        - in: query
+          name: hub
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, inactive]
+      responses:
+        "200":
+          description: List of staff
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffMember"
+    post:
+      operationId: createStaff
+      tags: [staff]
+      summary: Create a new staff member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffInput"
+      responses:
+        "201":
+          description: Staff member created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "400":
+          description: Validation error
+
+  /staff/{id}:
+    get:
+      operationId: getStaffMember
+      tags: [staff]
+      summary: Get a staff member by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Staff member detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateStaffMember
+      tags: [staff]
+      summary: Update a staff member
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffUpdate"
+      responses:
+        "200":
+          description: Updated staff member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffMember"
+    delete:
+      operationId: deleteStaffMember
+      tags: [staff]
+      summary: Delete a staff member
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Attendance ────────────────────────────────────────────────
+  /attendance/checkin:
+    post:
+      operationId: checkIn
+      tags: [attendance]
+      summary: Mark check-in with GPS coordinates (geo-fenced)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttendanceCheckin"
+      responses:
+        "200":
+          description: Check-in recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceEntry"
+        "400":
+          description: Outside geofence or already checked in
+        "404":
+          description: Staff not found
+
+  /attendance/checkout:
+    post:
+      operationId: checkOut
+      tags: [attendance]
+      summary: Mark check-out with GPS coordinates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttendanceCheckout"
+      responses:
+        "200":
+          description: Check-out recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceEntry"
+        "400":
+          description: Not checked in or already checked out
+        "404":
+          description: Staff not found
+
+  /attendance/my:
+    get:
+      operationId: getMyAttendance
+      tags: [attendance]
+      summary: Get attendance history for a staff member
+      parameters:
+        - in: query
+          name: staffId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: month
+          schema:
+            type: string
+            description: YYYY-MM format
+      responses:
+        "200":
+          description: Attendance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttendanceEntry"
+
+  /attendance/all:
+    get:
+      operationId: getAllAttendance
+      tags: [attendance]
+      summary: Get all staff attendance for admin (optionally filter by date)
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            description: YYYY-MM-DD format
+        - in: query
+          name: hub
+          schema:
+            type: string
+      responses:
+        "200":
+          description: All attendance records for the date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttendanceEntry"
+
+  # ── Live Tracking ─────────────────────────────────────────────
+  /locations/ping:
+    post:
+      operationId: pingLocation
+      tags: [locations]
+      summary: Update staff GPS location (called from mobile every 30s)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationPing"
+      responses:
+        "200":
+          description: Location updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffLocation"
+
+  /locations:
+    get:
+      operationId: listActiveLocations
+      tags: [locations]
+      summary: Get current GPS location of all active staff (for admin map)
+      parameters:
+        - in: query
+          name: hub
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Active staff locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffLocation"
+
+  # ── Hubs ──────────────────────────────────────────────────────
+  /hubs:
+    get:
+      operationId: listHubs
+      tags: [hubs]
+      summary: List all hubs with geofence coordinates
+      responses:
+        "200":
+          description: List of hubs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Hub"
+    post:
+      operationId: createHub
+      tags: [hubs]
+      summary: Create a new hub with geofence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HubInput"
+      responses:
+        "201":
+          description: Hub created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hub"
 
 components:
   schemas:
@@ -783,3 +1090,331 @@ components:
           type: ["string", "null"]
         failureReason:
           type: ["string", "null"]
+
+    # ── Staff schemas ───────────────────────────────────────────
+    StaffMember:
+      type: object
+      required:
+        - id
+        - name
+        - employeeId
+        - role
+        - phone
+        - hub
+        - status
+        - joiningDate
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        employeeId:
+          type: string
+        role:
+          type: string
+          enum: [driver, picker, sorter, loader, supervisor, security]
+        phone:
+          type: string
+        hub:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        joiningDate:
+          type: string
+        address:
+          type: ["string", "null"]
+        emergencyContact:
+          type: ["string", "null"]
+        aadhaarNumber:
+          type: ["string", "null"]
+        panNumber:
+          type: ["string", "null"]
+        licenseNumber:
+          type: ["string", "null"]
+        licenseExpiry:
+          type: ["string", "null"]
+        shiftStart:
+          type: ["string", "null"]
+        shiftEnd:
+          type: ["string", "null"]
+        isCheckedInToday:
+          type: boolean
+        checkInTime:
+          type: ["string", "null"]
+        checkInLat:
+          type: ["number", "null"]
+        checkInLng:
+          type: ["number", "null"]
+
+    StaffInput:
+      type: object
+      required:
+        - name
+        - employeeId
+        - role
+        - phone
+        - hub
+        - joiningDate
+        - password
+      properties:
+        name:
+          type: string
+        employeeId:
+          type: string
+        role:
+          type: string
+          enum: [driver, picker, sorter, loader, supervisor, security]
+        phone:
+          type: string
+        hub:
+          type: string
+        joiningDate:
+          type: string
+        password:
+          type: string
+        address:
+          type: ["string", "null"]
+        emergencyContact:
+          type: ["string", "null"]
+        aadhaarNumber:
+          type: ["string", "null"]
+        panNumber:
+          type: ["string", "null"]
+        licenseNumber:
+          type: ["string", "null"]
+        licenseExpiry:
+          type: ["string", "null"]
+        shiftStart:
+          type: ["string", "null"]
+        shiftEnd:
+          type: ["string", "null"]
+
+    StaffUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        hub:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        address:
+          type: ["string", "null"]
+        emergencyContact:
+          type: ["string", "null"]
+        shiftStart:
+          type: ["string", "null"]
+        shiftEnd:
+          type: ["string", "null"]
+        password:
+          type: ["string", "null"]
+
+    StaffLoginInput:
+      type: object
+      required:
+        - employeeId
+        - password
+      properties:
+        employeeId:
+          type: string
+        password:
+          type: string
+
+    StaffAuthResult:
+      type: object
+      required:
+        - staff
+        - token
+      properties:
+        staff:
+          $ref: "#/components/schemas/StaffMember"
+        token:
+          type: string
+
+    # ── Attendance schemas ──────────────────────────────────────
+    AttendanceEntry:
+      type: object
+      required:
+        - id
+        - staffId
+        - staffName
+        - role
+        - hub
+        - date
+        - status
+      properties:
+        id:
+          type: integer
+        staffId:
+          type: integer
+        staffName:
+          type: string
+        role:
+          type: string
+        hub:
+          type: string
+        date:
+          type: string
+        status:
+          type: string
+          enum: [present, absent, late, half_day]
+        checkIn:
+          type: ["string", "null"]
+        checkOut:
+          type: ["string", "null"]
+        checkInLat:
+          type: ["number", "null"]
+        checkInLng:
+          type: ["number", "null"]
+        checkOutLat:
+          type: ["number", "null"]
+        checkOutLng:
+          type: ["number", "null"]
+        withinGeofence:
+          type: ["boolean", "null"]
+        geofenceDistance:
+          type: ["number", "null"]
+        workingHours:
+          type: ["string", "null"]
+
+    AttendanceCheckin:
+      type: object
+      required:
+        - staffId
+        - lat
+        - lng
+      properties:
+        staffId:
+          type: integer
+        lat:
+          type: number
+        lng:
+          type: number
+        accuracy:
+          type: ["number", "null"]
+
+    AttendanceCheckout:
+      type: object
+      required:
+        - staffId
+        - lat
+        - lng
+      properties:
+        staffId:
+          type: integer
+        lat:
+          type: number
+        lng:
+          type: number
+        accuracy:
+          type: ["number", "null"]
+
+    # ── Location schemas ────────────────────────────────────────
+    LocationPing:
+      type: object
+      required:
+        - staffId
+        - lat
+        - lng
+      properties:
+        staffId:
+          type: integer
+        lat:
+          type: number
+        lng:
+          type: number
+        accuracy:
+          type: ["number", "null"]
+        speed:
+          type: ["number", "null"]
+        heading:
+          type: ["number", "null"]
+
+    StaffLocation:
+      type: object
+      required:
+        - staffId
+        - staffName
+        - role
+        - hub
+        - lat
+        - lng
+        - updatedAt
+        - isActive
+      properties:
+        staffId:
+          type: integer
+        staffName:
+          type: string
+        role:
+          type: string
+        hub:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        accuracy:
+          type: ["number", "null"]
+        speed:
+          type: ["number", "null"]
+        heading:
+          type: ["number", "null"]
+        updatedAt:
+          type: string
+        isActive:
+          type: boolean
+        isCheckedIn:
+          type: boolean
+
+    # ── Hub schemas ─────────────────────────────────────────────
+    Hub:
+      type: object
+      required:
+        - id
+        - name
+        - city
+        - lat
+        - lng
+        - radiusMeters
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        city:
+          type: string
+        address:
+          type: ["string", "null"]
+        lat:
+          type: number
+        lng:
+          type: number
+        radiusMeters:
+          type: integer
+
+    HubInput:
+      type: object
+      required:
+        - name
+        - city
+        - lat
+        - lng
+        - radiusMeters
+      properties:
+        name:
+          type: string
+        city:
+          type: string
+        address:
+          type: ["string", "null"]
+        lat:
+          type: number
+        lng:
+          type: number
+        radiusMeters:
+          type: integer

@@ -508,3 +508,409 @@ export const GetCustomerResponse = zod.object({
 })
 
 
+/**
+ * @summary Authenticate a staff member (mobile app login)
+ */
+export const StaffLoginBody = zod.object({
+  "employeeId": zod.string(),
+  "password": zod.string()
+})
+
+export const StaffLoginResponse = zod.object({
+  "staff": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "employeeId": zod.string(),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "phone": zod.string(),
+  "hub": zod.string(),
+  "status": zod.enum(['active', 'inactive']),
+  "joiningDate": zod.string(),
+  "address": zod.string().nullish(),
+  "emergencyContact": zod.string().nullish(),
+  "aadhaarNumber": zod.string().nullish(),
+  "panNumber": zod.string().nullish(),
+  "licenseNumber": zod.string().nullish(),
+  "licenseExpiry": zod.string().nullish(),
+  "shiftStart": zod.string().nullish(),
+  "shiftEnd": zod.string().nullish(),
+  "isCheckedInToday": zod.boolean().optional(),
+  "checkInTime": zod.string().nullish(),
+  "checkInLat": zod.number().nullish(),
+  "checkInLng": zod.number().nullish()
+}),
+  "token": zod.string()
+})
+
+
+/**
+ * @summary List all staff members
+ */
+export const ListStaffQueryParams = zod.object({
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']).optional(),
+  "hub": zod.coerce.string().optional(),
+  "status": zod.enum(['active', 'inactive']).optional()
+})
+
+export const ListStaffResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "employeeId": zod.string(),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "phone": zod.string(),
+  "hub": zod.string(),
+  "status": zod.enum(['active', 'inactive']),
+  "joiningDate": zod.string(),
+  "address": zod.string().nullish(),
+  "emergencyContact": zod.string().nullish(),
+  "aadhaarNumber": zod.string().nullish(),
+  "panNumber": zod.string().nullish(),
+  "licenseNumber": zod.string().nullish(),
+  "licenseExpiry": zod.string().nullish(),
+  "shiftStart": zod.string().nullish(),
+  "shiftEnd": zod.string().nullish(),
+  "isCheckedInToday": zod.boolean().optional(),
+  "checkInTime": zod.string().nullish(),
+  "checkInLat": zod.number().nullish(),
+  "checkInLng": zod.number().nullish()
+})
+export const ListStaffResponse = zod.array(ListStaffResponseItem)
+
+
+/**
+ * @summary Create a new staff member
+ */
+export const CreateStaffBody = zod.object({
+  "name": zod.string(),
+  "employeeId": zod.string(),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "phone": zod.string(),
+  "hub": zod.string(),
+  "joiningDate": zod.string(),
+  "password": zod.string(),
+  "address": zod.string().nullish(),
+  "emergencyContact": zod.string().nullish(),
+  "aadhaarNumber": zod.string().nullish(),
+  "panNumber": zod.string().nullish(),
+  "licenseNumber": zod.string().nullish(),
+  "licenseExpiry": zod.string().nullish(),
+  "shiftStart": zod.string().nullish(),
+  "shiftEnd": zod.string().nullish()
+})
+
+export const CreateStaffResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "employeeId": zod.string(),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "phone": zod.string(),
+  "hub": zod.string(),
+  "status": zod.enum(['active', 'inactive']),
+  "joiningDate": zod.string(),
+  "address": zod.string().nullish(),
+  "emergencyContact": zod.string().nullish(),
+  "aadhaarNumber": zod.string().nullish(),
+  "panNumber": zod.string().nullish(),
+  "licenseNumber": zod.string().nullish(),
+  "licenseExpiry": zod.string().nullish(),
+  "shiftStart": zod.string().nullish(),
+  "shiftEnd": zod.string().nullish(),
+  "isCheckedInToday": zod.boolean().optional(),
+  "checkInTime": zod.string().nullish(),
+  "checkInLat": zod.number().nullish(),
+  "checkInLng": zod.number().nullish()
+})
+
+
+/**
+ * @summary Get a staff member by ID
+ */
+export const GetStaffMemberParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetStaffMemberResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "employeeId": zod.string(),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "phone": zod.string(),
+  "hub": zod.string(),
+  "status": zod.enum(['active', 'inactive']),
+  "joiningDate": zod.string(),
+  "address": zod.string().nullish(),
+  "emergencyContact": zod.string().nullish(),
+  "aadhaarNumber": zod.string().nullish(),
+  "panNumber": zod.string().nullish(),
+  "licenseNumber": zod.string().nullish(),
+  "licenseExpiry": zod.string().nullish(),
+  "shiftStart": zod.string().nullish(),
+  "shiftEnd": zod.string().nullish(),
+  "isCheckedInToday": zod.boolean().optional(),
+  "checkInTime": zod.string().nullish(),
+  "checkInLat": zod.number().nullish(),
+  "checkInLng": zod.number().nullish()
+})
+
+
+/**
+ * @summary Update a staff member
+ */
+export const UpdateStaffMemberParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateStaffMemberBody = zod.object({
+  "name": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "hub": zod.string().optional(),
+  "status": zod.enum(['active', 'inactive']).optional(),
+  "address": zod.string().nullish(),
+  "emergencyContact": zod.string().nullish(),
+  "shiftStart": zod.string().nullish(),
+  "shiftEnd": zod.string().nullish(),
+  "password": zod.string().nullish()
+})
+
+export const UpdateStaffMemberResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "employeeId": zod.string(),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "phone": zod.string(),
+  "hub": zod.string(),
+  "status": zod.enum(['active', 'inactive']),
+  "joiningDate": zod.string(),
+  "address": zod.string().nullish(),
+  "emergencyContact": zod.string().nullish(),
+  "aadhaarNumber": zod.string().nullish(),
+  "panNumber": zod.string().nullish(),
+  "licenseNumber": zod.string().nullish(),
+  "licenseExpiry": zod.string().nullish(),
+  "shiftStart": zod.string().nullish(),
+  "shiftEnd": zod.string().nullish(),
+  "isCheckedInToday": zod.boolean().optional(),
+  "checkInTime": zod.string().nullish(),
+  "checkInLat": zod.number().nullish(),
+  "checkInLng": zod.number().nullish()
+})
+
+
+/**
+ * @summary Delete a staff member
+ */
+export const DeleteStaffMemberParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteStaffMemberResponse = zod.void()
+
+
+/**
+ * @summary Mark check-in with GPS coordinates (geo-fenced)
+ */
+export const CheckInBody = zod.object({
+  "staffId": zod.number(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "accuracy": zod.number().nullish()
+})
+
+export const CheckInResponse = zod.object({
+  "id": zod.number(),
+  "staffId": zod.number(),
+  "staffName": zod.string(),
+  "role": zod.string(),
+  "hub": zod.string(),
+  "date": zod.string(),
+  "status": zod.enum(['present', 'absent', 'late', 'half_day']),
+  "checkIn": zod.string().nullish(),
+  "checkOut": zod.string().nullish(),
+  "checkInLat": zod.number().nullish(),
+  "checkInLng": zod.number().nullish(),
+  "checkOutLat": zod.number().nullish(),
+  "checkOutLng": zod.number().nullish(),
+  "withinGeofence": zod.boolean().nullish(),
+  "geofenceDistance": zod.number().nullish(),
+  "workingHours": zod.string().nullish()
+})
+
+
+/**
+ * @summary Mark check-out with GPS coordinates
+ */
+export const CheckOutBody = zod.object({
+  "staffId": zod.number(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "accuracy": zod.number().nullish()
+})
+
+export const CheckOutResponse = zod.object({
+  "id": zod.number(),
+  "staffId": zod.number(),
+  "staffName": zod.string(),
+  "role": zod.string(),
+  "hub": zod.string(),
+  "date": zod.string(),
+  "status": zod.enum(['present', 'absent', 'late', 'half_day']),
+  "checkIn": zod.string().nullish(),
+  "checkOut": zod.string().nullish(),
+  "checkInLat": zod.number().nullish(),
+  "checkInLng": zod.number().nullish(),
+  "checkOutLat": zod.number().nullish(),
+  "checkOutLng": zod.number().nullish(),
+  "withinGeofence": zod.boolean().nullish(),
+  "geofenceDistance": zod.number().nullish(),
+  "workingHours": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get attendance history for a staff member
+ */
+export const GetMyAttendanceQueryParams = zod.object({
+  "staffId": zod.coerce.number(),
+  "month": zod.coerce.string().optional()
+})
+
+export const GetMyAttendanceResponseItem = zod.object({
+  "id": zod.number(),
+  "staffId": zod.number(),
+  "staffName": zod.string(),
+  "role": zod.string(),
+  "hub": zod.string(),
+  "date": zod.string(),
+  "status": zod.enum(['present', 'absent', 'late', 'half_day']),
+  "checkIn": zod.string().nullish(),
+  "checkOut": zod.string().nullish(),
+  "checkInLat": zod.number().nullish(),
+  "checkInLng": zod.number().nullish(),
+  "checkOutLat": zod.number().nullish(),
+  "checkOutLng": zod.number().nullish(),
+  "withinGeofence": zod.boolean().nullish(),
+  "geofenceDistance": zod.number().nullish(),
+  "workingHours": zod.string().nullish()
+})
+export const GetMyAttendanceResponse = zod.array(GetMyAttendanceResponseItem)
+
+
+/**
+ * @summary Get all staff attendance for admin (optionally filter by date)
+ */
+export const GetAllAttendanceQueryParams = zod.object({
+  "date": zod.coerce.string().optional(),
+  "hub": zod.coerce.string().optional()
+})
+
+export const GetAllAttendanceResponseItem = zod.object({
+  "id": zod.number(),
+  "staffId": zod.number(),
+  "staffName": zod.string(),
+  "role": zod.string(),
+  "hub": zod.string(),
+  "date": zod.string(),
+  "status": zod.enum(['present', 'absent', 'late', 'half_day']),
+  "checkIn": zod.string().nullish(),
+  "checkOut": zod.string().nullish(),
+  "checkInLat": zod.number().nullish(),
+  "checkInLng": zod.number().nullish(),
+  "checkOutLat": zod.number().nullish(),
+  "checkOutLng": zod.number().nullish(),
+  "withinGeofence": zod.boolean().nullish(),
+  "geofenceDistance": zod.number().nullish(),
+  "workingHours": zod.string().nullish()
+})
+export const GetAllAttendanceResponse = zod.array(GetAllAttendanceResponseItem)
+
+
+/**
+ * @summary Update staff GPS location (called from mobile every 30s)
+ */
+export const PingLocationBody = zod.object({
+  "staffId": zod.number(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "accuracy": zod.number().nullish(),
+  "speed": zod.number().nullish(),
+  "heading": zod.number().nullish()
+})
+
+export const PingLocationResponse = zod.object({
+  "staffId": zod.number(),
+  "staffName": zod.string(),
+  "role": zod.string(),
+  "hub": zod.string(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "accuracy": zod.number().nullish(),
+  "speed": zod.number().nullish(),
+  "heading": zod.number().nullish(),
+  "updatedAt": zod.string(),
+  "isActive": zod.boolean(),
+  "isCheckedIn": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Get current GPS location of all active staff (for admin map)
+ */
+export const ListActiveLocationsQueryParams = zod.object({
+  "hub": zod.coerce.string().optional()
+})
+
+export const ListActiveLocationsResponseItem = zod.object({
+  "staffId": zod.number(),
+  "staffName": zod.string(),
+  "role": zod.string(),
+  "hub": zod.string(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "accuracy": zod.number().nullish(),
+  "speed": zod.number().nullish(),
+  "heading": zod.number().nullish(),
+  "updatedAt": zod.string(),
+  "isActive": zod.boolean(),
+  "isCheckedIn": zod.boolean().optional()
+})
+export const ListActiveLocationsResponse = zod.array(ListActiveLocationsResponseItem)
+
+
+/**
+ * @summary List all hubs with geofence coordinates
+ */
+export const ListHubsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "city": zod.string(),
+  "address": zod.string().nullish(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "radiusMeters": zod.number()
+})
+export const ListHubsResponse = zod.array(ListHubsResponseItem)
+
+
+/**
+ * @summary Create a new hub with geofence
+ */
+export const CreateHubBody = zod.object({
+  "name": zod.string(),
+  "city": zod.string(),
+  "address": zod.string().nullish(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "radiusMeters": zod.number()
+})
+
+export const CreateHubResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "city": zod.string(),
+  "address": zod.string().nullish(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "radiusMeters": zod.number()
+})
+
+

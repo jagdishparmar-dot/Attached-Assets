@@ -376,6 +376,238 @@ export interface DeliveryUpdate {
   failureReason?: string | null;
 }
 
+export type StaffMemberRole = typeof StaffMemberRole[keyof typeof StaffMemberRole];
+
+
+export const StaffMemberRole = {
+  driver: 'driver',
+  picker: 'picker',
+  sorter: 'sorter',
+  loader: 'loader',
+  supervisor: 'supervisor',
+  security: 'security',
+} as const;
+
+export type StaffMemberStatus = typeof StaffMemberStatus[keyof typeof StaffMemberStatus];
+
+
+export const StaffMemberStatus = {
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export interface StaffMember {
+  id: number;
+  name: string;
+  employeeId: string;
+  role: StaffMemberRole;
+  phone: string;
+  hub: string;
+  status: StaffMemberStatus;
+  joiningDate: string;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  emergencyContact?: string | null;
+  /** @nullable */
+  aadhaarNumber?: string | null;
+  /** @nullable */
+  panNumber?: string | null;
+  /** @nullable */
+  licenseNumber?: string | null;
+  /** @nullable */
+  licenseExpiry?: string | null;
+  /** @nullable */
+  shiftStart?: string | null;
+  /** @nullable */
+  shiftEnd?: string | null;
+  isCheckedInToday?: boolean;
+  /** @nullable */
+  checkInTime?: string | null;
+  /** @nullable */
+  checkInLat?: number | null;
+  /** @nullable */
+  checkInLng?: number | null;
+}
+
+export type StaffInputRole = typeof StaffInputRole[keyof typeof StaffInputRole];
+
+
+export const StaffInputRole = {
+  driver: 'driver',
+  picker: 'picker',
+  sorter: 'sorter',
+  loader: 'loader',
+  supervisor: 'supervisor',
+  security: 'security',
+} as const;
+
+export interface StaffInput {
+  name: string;
+  employeeId: string;
+  role: StaffInputRole;
+  phone: string;
+  hub: string;
+  joiningDate: string;
+  password: string;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  emergencyContact?: string | null;
+  /** @nullable */
+  aadhaarNumber?: string | null;
+  /** @nullable */
+  panNumber?: string | null;
+  /** @nullable */
+  licenseNumber?: string | null;
+  /** @nullable */
+  licenseExpiry?: string | null;
+  /** @nullable */
+  shiftStart?: string | null;
+  /** @nullable */
+  shiftEnd?: string | null;
+}
+
+export type StaffUpdateStatus = typeof StaffUpdateStatus[keyof typeof StaffUpdateStatus];
+
+
+export const StaffUpdateStatus = {
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export interface StaffUpdate {
+  name?: string;
+  phone?: string;
+  hub?: string;
+  status?: StaffUpdateStatus;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  emergencyContact?: string | null;
+  /** @nullable */
+  shiftStart?: string | null;
+  /** @nullable */
+  shiftEnd?: string | null;
+  /** @nullable */
+  password?: string | null;
+}
+
+export interface StaffLoginInput {
+  employeeId: string;
+  password: string;
+}
+
+export interface StaffAuthResult {
+  staff: StaffMember;
+  token: string;
+}
+
+export type AttendanceEntryStatus = typeof AttendanceEntryStatus[keyof typeof AttendanceEntryStatus];
+
+
+export const AttendanceEntryStatus = {
+  present: 'present',
+  absent: 'absent',
+  late: 'late',
+  half_day: 'half_day',
+} as const;
+
+export interface AttendanceEntry {
+  id: number;
+  staffId: number;
+  staffName: string;
+  role: string;
+  hub: string;
+  date: string;
+  status: AttendanceEntryStatus;
+  /** @nullable */
+  checkIn?: string | null;
+  /** @nullable */
+  checkOut?: string | null;
+  /** @nullable */
+  checkInLat?: number | null;
+  /** @nullable */
+  checkInLng?: number | null;
+  /** @nullable */
+  checkOutLat?: number | null;
+  /** @nullable */
+  checkOutLng?: number | null;
+  /** @nullable */
+  withinGeofence?: boolean | null;
+  /** @nullable */
+  geofenceDistance?: number | null;
+  /** @nullable */
+  workingHours?: string | null;
+}
+
+export interface AttendanceCheckin {
+  staffId: number;
+  lat: number;
+  lng: number;
+  /** @nullable */
+  accuracy?: number | null;
+}
+
+export interface AttendanceCheckout {
+  staffId: number;
+  lat: number;
+  lng: number;
+  /** @nullable */
+  accuracy?: number | null;
+}
+
+export interface LocationPing {
+  staffId: number;
+  lat: number;
+  lng: number;
+  /** @nullable */
+  accuracy?: number | null;
+  /** @nullable */
+  speed?: number | null;
+  /** @nullable */
+  heading?: number | null;
+}
+
+export interface StaffLocation {
+  staffId: number;
+  staffName: string;
+  role: string;
+  hub: string;
+  lat: number;
+  lng: number;
+  /** @nullable */
+  accuracy?: number | null;
+  /** @nullable */
+  speed?: number | null;
+  /** @nullable */
+  heading?: number | null;
+  updatedAt: string;
+  isActive: boolean;
+  isCheckedIn?: boolean;
+}
+
+export interface Hub {
+  id: number;
+  name: string;
+  city: string;
+  /** @nullable */
+  address?: string | null;
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+}
+
+export interface HubInput {
+  name: string;
+  city: string;
+  /** @nullable */
+  address?: string | null;
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+}
+
 export type ListDeliveriesParams = {
 status?: ListDeliveriesStatus;
 date?: string;
@@ -404,4 +636,50 @@ export const ListDriversStatus = {
   active: 'active',
   inactive: 'inactive',
 } as const;
+
+export type ListStaffParams = {
+role?: ListStaffRole;
+hub?: string;
+status?: ListStaffStatus;
+};
+
+export type ListStaffRole = typeof ListStaffRole[keyof typeof ListStaffRole];
+
+
+export const ListStaffRole = {
+  driver: 'driver',
+  picker: 'picker',
+  sorter: 'sorter',
+  loader: 'loader',
+  supervisor: 'supervisor',
+  security: 'security',
+} as const;
+
+export type ListStaffStatus = typeof ListStaffStatus[keyof typeof ListStaffStatus];
+
+
+export const ListStaffStatus = {
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export type GetMyAttendanceParams = {
+staffId: number;
+/**
+ * YYYY-MM format
+ */
+month?: string;
+};
+
+export type GetAllAttendanceParams = {
+/**
+ * YYYY-MM-DD format
+ */
+date?: string;
+hub?: string;
+};
+
+export type ListActiveLocationsParams = {
+hub?: string;
+};
 

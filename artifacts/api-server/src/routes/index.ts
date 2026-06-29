@@ -5,6 +5,10 @@ import driversRouter from "./drivers";
 import vehiclesRouter from "./vehicles";
 import customersRouter from "./customers";
 import deliveriesRouter from "./deliveries";
+import staffRouter from "./staff";
+import attendanceRouter from "./attendance";
+import locationsRouter from "./locations";
+import hubsRouter from "./hubs";
 
 const router: IRouter = Router();
 
@@ -14,5 +18,9 @@ router.use(driversRouter);
 router.use(vehiclesRouter);
 router.use(customersRouter);
 router.use(deliveriesRouter);
+router.use(staffRouter);
+router.use(attendanceRouter);
+router.use(locationsRouter);
+router.use(hubsRouter);
 
 export default router;

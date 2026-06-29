@@ -20,7 +20,7 @@ import { useColors } from "@/hooks/useColors";
 export default function DashboardScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { driver } = useAuth();
+  const { staff } = useAuth();
   const { deliveries, todayAttendance, isGpsActive, currentSpeed, refreshData } = useApp();
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -58,7 +58,7 @@ export default function DashboardScreen() {
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.greeting}>{greeting},</Text>
-            <Text style={styles.driverName}>{driver?.name ?? "Driver"}</Text>
+            <Text style={styles.driverName}>{staff?.name ?? "Staff"}</Text>
             <Text style={styles.dateStr}>{dateStr}</Text>
           </View>
           <View style={styles.headerRight}>
@@ -126,17 +126,17 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.statsGrid}>
             <StatCard
-              label="Vehicle"
-              value={driver?.vehicle ?? "—"}
-              icon="local-shipping"
+              label="Hub"
+              value={staff?.hub ?? "—"}
+              icon="warehouse"
               iconColor={colors.secondary}
               iconBg={colors.muted}
               small
             />
             <StatCard
-              label="Hub"
-              value="Ahmedabad"
-              icon="warehouse"
+              label="Role"
+              value={staff?.role ? staff.role.charAt(0).toUpperCase() + staff.role.slice(1) : "Staff"}
+              icon="badge"
               iconColor={colors.secondary}
               iconBg={colors.muted}
               small
@@ -165,8 +165,8 @@ export default function DashboardScreen() {
               <View style={styles.vehicleInfo}>
                 <MaterialIcons name="local-shipping" size={28} color={colors.secondary} />
                 <View>
-                  <Text style={[styles.vehicleNum, { color: colors.foreground }]}>{driver?.vehicle}</Text>
-                  <Text style={[styles.vehicleType, { color: colors.mutedForeground }]}>{driver?.vehicleType}</Text>
+                  <Text style={[styles.vehicleNum, { color: colors.foreground }]}>{staff?.hub ?? "—"}</Text>
+                  <Text style={[styles.vehicleType, { color: colors.mutedForeground }]}>{staff?.role?.toUpperCase() ?? "STAFF"}</Text>
                 </View>
               </View>
               <View style={[styles.statusPill, { backgroundColor: "#DCFCE7" }]}>

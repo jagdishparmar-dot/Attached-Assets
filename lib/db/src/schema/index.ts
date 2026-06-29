@@ -3,3 +3,7 @@ export * from "./vehicles";
 export * from "./customers";
 export * from "./deliveries";
 export * from "./activity";
+export * from "./staff";
+export * from "./attendance";
+export * from "./locations";
+export * from "./hubs";

@@ -1,25 +1,30 @@
 import { BlurView } from "expo-blur";
 import { isLiquidGlassAvailable } from "expo-glass-effect";
-import { Tabs } from "expo-router";
+import { Tabs, router, usePathname } from "expo-router";
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { SymbolView } from "expo-symbols";
 import { MaterialIcons } from "@expo/vector-icons";
-import React from "react";
+import React, { useEffect } from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 
+import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 
-function NativeTabLayout() {
+function NativeTabLayout({ isDriver }: { isDriver: boolean }) {
   return (
     <NativeTabs>
-      <NativeTabs.Trigger name="index">
-        <Icon sf={{ default: "house", selected: "house.fill" }} />
-        <Label>Dashboard</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="deliveries">
-        <Icon sf={{ default: "shippingbox", selected: "shippingbox.fill" }} />
-        <Label>Deliveries</Label>
-      </NativeTabs.Trigger>
+      {isDriver && (
+        <NativeTabs.Trigger name="index">
+          <Icon sf={{ default: "house", selected: "house.fill" }} />
+          <Label>Dashboard</Label>
+        </NativeTabs.Trigger>
+      )}
+      {isDriver && (
+        <NativeTabs.Trigger name="deliveries">
+          <Icon sf={{ default: "shippingbox", selected: "shippingbox.fill" }} />
+          <Label>Deliveries</Label>
+        </NativeTabs.Trigger>
+      )}
       <NativeTabs.Trigger name="attendance">
         <Icon sf={{ default: "person.badge.clock", selected: "person.badge.clock.fill" }} />
         <Label>Attendance</Label>
@@ -36,7 +41,7 @@ function NativeTabLayout() {
   );
 }
 
-function ClassicTabLayout() {
+function ClassicTabLayout({ isDriver }: { isDriver: boolean }) {
   const colors = useColors();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -83,6 +88,7 @@ function ClassicTabLayout() {
         name="index"
         options={{
           title: "Dashboard",
+          href: isDriver ? undefined : null,
           tabBarIcon: ({ color }) => tabIcon("dashboard", "house", color),
         }}
       />
@@ -90,6 +96,7 @@ function ClassicTabLayout() {
         name="deliveries"
         options={{
           title: "Deliveries",
+          href: isDriver ? undefined : null,
           tabBarIcon: ({ color }) => tabIcon("local-shipping", "shippingbox", color),
         }}
       />
@@ -119,10 +126,23 @@ function ClassicTabLayout() {
 }
 
 export default function TabLayout() {
+  const { staff, isLoading } = useAuth();
+  const pathname = usePathname();
+  const isDriver = staff?.role === "driver";
+
+  // Redirect non-drivers away from driver-only tabs
+  useEffect(() => {
+    if (isLoading || !staff || isDriver) return;
+    const allowed = ["/attendance", "/track", "/profile"];
+    if (!allowed.some((p) => pathname.endsWith(p))) {
+      router.replace("/(tabs)/attendance");
+    }
+  }, [isDriver, isLoading, staff, pathname]);
+
   if (isLiquidGlassAvailable()) {
-    return <NativeTabLayout />;
+    return <NativeTabLayout isDriver={isDriver} />;
   }
-  return <ClassicTabLayout />;
+  return <ClassicTabLayout isDriver={isDriver} />;
 }
 
 const styles = StyleSheet.create({});

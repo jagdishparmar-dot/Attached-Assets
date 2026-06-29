@@ -1,49 +1,53 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { Platform } from "react-native";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export interface Driver {
-  id: string;
+export type StaffRole = "driver" | "picker" | "sorter" | "loader" | "supervisor" | "security";
+
+export interface StaffMember {
+  id: number;
   name: string;
   employeeId: string;
+  role: StaffRole;
   phone: string;
-  license: string;
-  licenseExpiry: string;
-  photo: string | null;
-  vehicle: string;
-  vehicleType: string;
   hub: string;
-  joiningDate: string;
   status: "active" | "inactive";
+  licenseNumber: string | null;
+  licenseExpiry: string | null;
+  shiftStart: string | null;
+  shiftEnd: string | null;
+  joiningDate: string;
+  isCheckedInToday: boolean;
+  checkInTime: string | null;
+  checkInLat: number | null;
+  checkInLng: number | null;
 }
 
 interface AuthContextType {
-  driver: Driver | null;
+  staff: StaffMember | null;
+  token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (employeeId: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  refreshStaff: (updated: Partial<StaffMember>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+const SESSION_KEY = "@coldverse_session_v2";
 
-const MOCK_DRIVER: Driver = {
-  id: "DRV001",
-  name: "Rajesh Kumar",
-  employeeId: "CV-DRV-001",
-  phone: "+91 98765 43210",
-  license: "GJ01 20190012345",
-  licenseExpiry: "2027-08-15",
-  photo: null,
-  vehicle: "GJ-01-AK-2345",
-  vehicleType: "Refrigerated Truck",
-  hub: "Ahmedabad Cold Hub",
-  joiningDate: "2021-03-10",
-  status: "active",
-};
+export function getApiBase(): string {
+  if (Platform.OS !== "web") {
+    const domain = process.env.EXPO_PUBLIC_DOMAIN;
+    if (domain) return `https://${domain}`;
+  }
+  return "";
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [driver, setDriver] = useState<Driver | null>(null);
+  const [staff, setStaff] = useState<StaffMember | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -52,10 +56,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkSession = async () => {
     try {
-      const session = await AsyncStorage.getItem("@coldverse_session");
-      if (session) {
-        const parsed = JSON.parse(session);
-        setDriver(parsed.driver);
+      const raw = await AsyncStorage.getItem(SESSION_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { staff: StaffMember; token: string };
+        setStaff(parsed.staff);
+        setToken(parsed.token);
       }
     } catch {
       // ignore
@@ -65,31 +70,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (employeeId: string, password: string): Promise<boolean> => {
-    if (employeeId === "CV-DRV-001" && password === "cold@123") {
-      await AsyncStorage.setItem(
-        "@coldverse_session",
-        JSON.stringify({ driver: MOCK_DRIVER, token: "mock-jwt-token" })
-      );
-      setDriver(MOCK_DRIVER);
+    try {
+      const base = getApiBase();
+      const resp = await fetch(`${base}/api/staff/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employeeId, password }),
+      });
+      if (!resp.ok) return false;
+      const data = await resp.json() as { staff: StaffMember; token: string };
+      await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(data));
+      setStaff(data.staff);
+      setToken(data.token);
       return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem("@coldverse_session");
-    setDriver(null);
+    await AsyncStorage.removeItem(SESSION_KEY);
+    setStaff(null);
+    setToken(null);
     router.replace("/login");
+  };
+
+  const refreshStaff = (updated: Partial<StaffMember>) => {
+    if (!staff) return;
+    const next = { ...staff, ...updated };
+    setStaff(next);
+    AsyncStorage.setItem(SESSION_KEY, JSON.stringify({ staff: next, token }));
   };
 
   return (
     <AuthContext.Provider
       value={{
-        driver,
+        staff,
+        token,
         isLoading,
-        isAuthenticated: !!driver,
+        isAuthenticated: !!staff,
         login,
         logout,
+        refreshStaff,
       }}
     >
       {children}

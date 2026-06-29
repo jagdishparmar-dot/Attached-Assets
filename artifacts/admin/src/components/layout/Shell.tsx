@@ -6,8 +6,7 @@ import {
   Users, 
   Car, 
   Building2, 
-  Menu,
-  LogOut,
+  MapPin,
   Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,13 +24,48 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-const NAV_ITEMS = [
+const OPS_NAV = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
   { title: "Deliveries", url: "/admin/deliveries", icon: Truck },
   { title: "Drivers", url: "/admin/drivers", icon: Users },
   { title: "Vehicles", url: "/admin/vehicles", icon: Car },
   { title: "Customers", url: "/admin/customers", icon: Building2 },
 ];
+
+const WORKFORCE_NAV = [
+  { title: "Staff", url: "/admin/staff", icon: Users },
+  { title: "Live Tracking", url: "/admin/tracking", icon: MapPin },
+];
+
+function NavGroup({ label, items, location }: { label: string; items: typeof OPS_NAV; location: string }) {
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-semibold uppercase tracking-wider mt-4 mb-2 px-6">
+        {label}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => {
+            const isActive = location.startsWith(item.url);
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                  <Link
+                    href={item.url}
+                    className={`flex items-center gap-3 px-6 py-2.5 transition-colors ${isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"}`}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+}
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -44,32 +78,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
             Coldverse
           </SidebarHeader>
           <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-semibold uppercase tracking-wider mt-4 mb-2 px-6">
-                Operations
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {NAV_ITEMS.map((item) => {
-                    const isActive = location.startsWith(item.url);
-                    return (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive}
-                          tooltip={item.title}
-                        >
-                          <Link href={item.url} className={`flex items-center gap-3 px-6 py-2.5 transition-colors ${isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'}`}>
-                            <item.icon className="h-5 w-5" />
-                            <span>{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            <NavGroup label="Operations" items={OPS_NAV} location={location} />
+            <NavGroup label="Workforce" items={WORKFORCE_NAV} location={location} />
           </SidebarContent>
         </Sidebar>
 
