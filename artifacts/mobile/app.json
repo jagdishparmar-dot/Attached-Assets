@@ -2,6 +2,7 @@
   "expo": {
     "name": "Coldverse",
     "slug": "coldverse",
+    "owner": "jayant86",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -22,7 +23,10 @@
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#0A2540"
       },
-      "package": "com.coldverse.app"
+      "package": "com.coldverse.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -41,6 +45,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4b49d539-3d84-4bcf-a382-66285f0886df"
+      }
     }
   }
 }
