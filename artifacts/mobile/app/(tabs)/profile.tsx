@@ -1,7 +1,9 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import React from "react";
 import {
+  ActivityIndicator,
   Alert,
   Platform,
   ScrollView,
@@ -15,9 +17,29 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 
+const ROLE_LABELS: Record<string, string> = {
+  driver: "Driver",
+  picker: "Picker",
+  sorter: "Sorter",
+  loader: "Loader",
+  supervisor: "Supervisor",
+  security: "Security Guard",
+};
+
+function initials(name: string | null | undefined): string {
+  if (!name) return "CV";
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 interface ProfileRowProps {
   label: string;
-  value: string;
+  value: string | null | undefined;
   icon: keyof typeof MaterialIcons.glyphMap;
 }
 
@@ -30,7 +52,7 @@ function ProfileRow({ label, value, icon }: ProfileRowProps) {
       </View>
       <View style={styles.rowContent}>
         <Text style={[styles.rowLabel, { color: colors.mutedForeground }]}>{label}</Text>
-        <Text style={[styles.rowValue, { color: colors.foreground }]}>{value}</Text>
+        <Text style={[styles.rowValue, { color: colors.foreground }]}>{value ?? "—"}</Text>
       </View>
     </View>
   );
@@ -63,15 +85,16 @@ function MenuItem({ label, icon, color, onPress }: MenuItemProps) {
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { staff, logout } = useAuth();
+  const { staff, isLoading, logout } = useAuth();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : 0;
 
-  const ROLE_LABELS: Record<string, string> = {
-    driver: "Driver", picker: "Picker", sorter: "Sorter",
-    loader: "Loader", supervisor: "Supervisor", security: "Security Guard",
-  };
+  React.useEffect(() => {
+    if (!isLoading && !staff) {
+      router.replace("/login");
+    }
+  }, [isLoading, staff]);
 
   const handleLogout = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -85,23 +108,29 @@ export default function ProfileScreen() {
     );
   };
 
-  if (!staff) return null;
+  if (isLoading || !staff) {
+    return (
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.primary, paddingTop: topPad + 16 }]}>
         <View style={styles.avatarRow}>
           <View style={[styles.avatar, { backgroundColor: "#2E6BE6" }]}>
-            <Text style={styles.avatarText}>
-              {staff.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-            </Text>
+            <Text style={styles.avatarText}>{initials(staff.name)}</Text>
           </View>
           <View style={styles.avatarInfo}>
-            <Text style={styles.driverName}>{staff.name}</Text>
-            <Text style={styles.employeeId}>{staff.employeeId}</Text>
+            <Text style={styles.staffName}>{staff.name ?? "—"}</Text>
+            <Text style={styles.employeeId}>{staff.employeeId ?? "—"}</Text>
             <View style={styles.activeBadge}>
               <View style={styles.greenDot} />
-              <Text style={styles.activeText}>{ROLE_LABELS[staff.role] ?? staff.role}</Text>
+              <Text style={styles.activeText}>
+                {ROLE_LABELS[staff.role] ?? staff.role ?? "Staff"}
+              </Text>
             </View>
           </View>
         </View>
@@ -121,12 +150,12 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {staff.role === "driver" && staff.licenseNumber && (
+        {staff.role === "driver" && (staff.licenseNumber || staff.licenseExpiry) && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Driver Details</Text>
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <ProfileRow label="License No." value={staff.licenseNumber} icon="card-membership" />
-              {staff.licenseExpiry && <ProfileRow label="License Expiry" value={staff.licenseExpiry} icon="event" />}
+              <ProfileRow label="License Expiry" value={staff.licenseExpiry} icon="event" />
             </View>
           </View>
         )}
@@ -135,9 +164,11 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Hub & Shift</Text>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <ProfileRow label="Hub" value={staff.hub} icon="warehouse" />
-            {staff.shiftStart && staff.shiftEnd && (
-              <ProfileRow label="Shift" value={`${staff.shiftStart} – ${staff.shiftEnd}`} icon="schedule" />
-            )}
+            <ProfileRow
+              label="Shift"
+              value={staff.shiftStart && staff.shiftEnd ? `${staff.shiftStart} – ${staff.shiftEnd}` : null}
+              icon="schedule"
+            />
           </View>
         </View>
 
@@ -173,12 +204,13 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: { paddingHorizontal: 20, paddingBottom: 24 },
   avatarRow: { flexDirection: "row", alignItems: "center", gap: 16 },
   avatar: { width: 72, height: 72, borderRadius: 20, justifyContent: "center", alignItems: "center" },
   avatarText: { color: "#fff", fontSize: 24, fontFamily: "Inter_700Bold" },
   avatarInfo: { flex: 1 },
-  driverName: { color: "#fff", fontSize: 20, fontFamily: "Inter_700Bold" },
+  staffName: { color: "#fff", fontSize: 20, fontFamily: "Inter_700Bold" },
   employeeId: { color: "#8BAFC7", fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
   activeBadge: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 },
   greenDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: "#22C55E" },
