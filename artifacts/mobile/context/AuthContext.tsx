@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { Platform } from "react-native";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type StaffRole = "driver" | "picker" | "sorter" | "loader" | "supervisor" | "security";
+export type StaffRole = "driver" | "picker" | "sorter" | "loader" | "supervisor" | "security" | "house_keeper";
 
 export interface StaffMember {
   id: number;
@@ -29,7 +29,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (employeeId: string, password: string) => Promise<boolean>;
+  login: (phone: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshStaff: (updated: Partial<StaffMember>) => void;
 }
@@ -69,13 +69,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = async (employeeId: string, password: string): Promise<boolean> => {
+  const login = async (phone: string, password: string): Promise<boolean> => {
     try {
       const base = getApiBase();
       const resp = await fetch(`${base}/api/staff/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ employeeId, password }),
+        body: JSON.stringify({ phone, password }),
       });
       if (!resp.ok) return false;
       const data = await resp.json() as { staff: StaffMember; token: string };

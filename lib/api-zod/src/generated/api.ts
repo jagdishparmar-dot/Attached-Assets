@@ -526,7 +526,7 @@ export const StaffLoginResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "employeeId": zod.string(),
-  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security', 'house_keeper']),
   "phone": zod.string(),
   "hub": zod.string(),
   "status": zod.enum(['active', 'inactive']),
@@ -552,7 +552,7 @@ export const StaffLoginResponse = zod.object({
  * @summary List all staff members
  */
 export const ListStaffQueryParams = zod.object({
-  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']).optional(),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security', 'house_keeper']).optional(),
   "hub": zod.coerce.string().optional(),
   "status": zod.enum(['active', 'inactive']).optional()
 })
@@ -561,7 +561,7 @@ export const ListStaffResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "employeeId": zod.string(),
-  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security', 'house_keeper']),
   "phone": zod.string(),
   "hub": zod.string(),
   "status": zod.enum(['active', 'inactive']),
@@ -588,7 +588,7 @@ export const ListStaffResponse = zod.array(ListStaffResponseItem)
 export const CreateStaffBody = zod.object({
   "name": zod.string(),
   "employeeId": zod.string(),
-  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security', 'house_keeper']),
   "phone": zod.string(),
   "hub": zod.string(),
   "joiningDate": zod.string(),
@@ -607,7 +607,7 @@ export const CreateStaffResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "employeeId": zod.string(),
-  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security', 'house_keeper']),
   "phone": zod.string(),
   "hub": zod.string(),
   "status": zod.enum(['active', 'inactive']),
@@ -638,7 +638,7 @@ export const GetStaffMemberResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "employeeId": zod.string(),
-  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security', 'house_keeper']),
   "phone": zod.string(),
   "hub": zod.string(),
   "status": zod.enum(['active', 'inactive']),
@@ -681,7 +681,7 @@ export const UpdateStaffMemberResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "employeeId": zod.string(),
-  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security']),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security', 'house_keeper']),
   "phone": zod.string(),
   "hub": zod.string(),
   "status": zod.enum(['active', 'inactive']),

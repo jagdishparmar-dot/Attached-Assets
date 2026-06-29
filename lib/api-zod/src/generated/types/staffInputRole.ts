@@ -16,4 +16,5 @@ export const StaffInputRole = {
   loader: 'loader',
   supervisor: 'supervisor',
   security: 'security',
+  house_keeper: 'house_keeper',
 } as const;

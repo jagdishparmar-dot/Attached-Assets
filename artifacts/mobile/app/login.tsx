@@ -24,22 +24,22 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { login } = useAuth();
 
-  const [employeeId, setEmployeeId] = useState("CV-DRV-001");
+  const [phone, setPhone] = useState("9876543210");
   const [password, setPassword] = useState("cold@123");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
-    if (!employeeId.trim() || !password.trim()) {
-      setError("Please enter your Employee ID and password");
+    if (!phone.trim() || !password.trim()) {
+      setError("Please enter your Mobile Number and password");
       return;
     }
     setError("");
     setLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const success = await login(employeeId.trim(), password);
+    const success = await login(phone.trim(), password);
     if (success) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace("/(tabs)");
@@ -83,16 +83,16 @@ export default function LoginScreen() {
             </Text>
 
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: "#1A3A6B" }]}>Employee ID</Text>
+              <Text style={[styles.fieldLabel, { color: "#1A3A6B" }]}>Mobile Number</Text>
               <View style={[styles.inputWrap, { borderColor: "#DDE3ED", backgroundColor: "#F0F4F9" }]}>
-                <MaterialIcons name="badge" size={20} color="#6B7A8D" />
+                <MaterialIcons name="phone" size={20} color="#6B7A8D" />
                 <TextInput
                   style={[styles.input, { color: "#0A1628" }]}
-                  value={employeeId}
-                  onChangeText={setEmployeeId}
-                  placeholder="e.g. CV-DRV-001"
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="e.g. 9876543210"
                   placeholderTextColor="#9BACC4"
-                  autoCapitalize="characters"
+                  keyboardType="phone-pad"
                   autoCorrect={false}
                 />
               </View>
@@ -143,7 +143,7 @@ export default function LoginScreen() {
             <View style={styles.hintBox}>
               <MaterialIcons name="info-outline" size={14} color="#6B7A8D" />
               <Text style={[styles.hintText, { color: "#6B7A8D" }]}>
-                Demo: ID <Text style={{ fontFamily: "Inter_600SemiBold", color: "#1A3A6B" }}>CV-DRV-001</Text> · PW <Text style={{ fontFamily: "Inter_600SemiBold", color: "#1A3A6B" }}>cold@123</Text>
+                Demo: <Text style={{ fontFamily: "Inter_600SemiBold", color: "#1A3A6B" }}>9876543210</Text> · PW <Text style={{ fontFamily: "Inter_600SemiBold", color: "#1A3A6B" }}>cold@123</Text>
               </Text>
             </View>
           </View>

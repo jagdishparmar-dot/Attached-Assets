@@ -25,6 +25,12 @@ function NativeTabLayout({ isDriver }: { isDriver: boolean }) {
           <Label>Deliveries</Label>
         </NativeTabs.Trigger>
       )}
+      {isDriver && (
+        <NativeTabs.Trigger name="route">
+          <Icon sf={{ default: "map", selected: "map.fill" }} />
+          <Label>Route</Label>
+        </NativeTabs.Trigger>
+      )}
       <NativeTabs.Trigger name="attendance">
         <Icon sf={{ default: "person.badge.clock", selected: "person.badge.clock.fill" }} />
         <Label>Attendance</Label>
@@ -98,6 +104,14 @@ function ClassicTabLayout({ isDriver }: { isDriver: boolean }) {
           title: "Deliveries",
           href: isDriver ? undefined : null,
           tabBarIcon: ({ color }) => tabIcon("local-shipping", "shippingbox", color),
+        }}
+      />
+      <Tabs.Screen
+        name="route"
+        options={{
+          title: "Route",
+          href: isDriver ? undefined : null,
+          tabBarIcon: ({ color }) => tabIcon("map", "map", color),
         }}
       />
       <Tabs.Screen

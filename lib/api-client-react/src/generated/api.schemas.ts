@@ -391,6 +391,7 @@ export const StaffMemberRole = {
   loader: 'loader',
   supervisor: 'supervisor',
   security: 'security',
+  house_keeper: 'house_keeper',
 } as const;
 
 export type StaffMemberStatus = typeof StaffMemberStatus[keyof typeof StaffMemberStatus];
@@ -445,6 +446,7 @@ export const StaffInputRole = {
   loader: 'loader',
   supervisor: 'supervisor',
   security: 'security',
+  house_keeper: 'house_keeper',
 } as const;
 
 export interface StaffInput {
@@ -658,6 +660,7 @@ export const ListStaffRole = {
   loader: 'loader',
   supervisor: 'supervisor',
   security: 'security',
+  house_keeper: 'house_keeper',
 } as const;
 
 export type ListStaffStatus = typeof ListStaffStatus[keyof typeof ListStaffStatus];

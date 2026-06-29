@@ -9,6 +9,7 @@ import staffRouter from "./staff";
 import attendanceRouter from "./attendance";
 import locationsRouter from "./locations";
 import hubsRouter from "./hubs";
+import aiRouter from "./ai";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(staffRouter);
 router.use(attendanceRouter);
 router.use(locationsRouter);
 router.use(hubsRouter);
+router.use(aiRouter);
 
 export default router;

@@ -371,7 +371,7 @@ paths:
           name: role
           schema:
             type: string
-            enum: [driver, picker, sorter, loader, supervisor, security]
+            enum: [driver, picker, sorter, loader, supervisor, security, house_keeper]
         - in: query
           name: hub
           schema:
@@ -1115,7 +1115,7 @@ components:
           type: string
         role:
           type: string
-          enum: [driver, picker, sorter, loader, supervisor, security]
+          enum: [driver, picker, sorter, loader, supervisor, security, house_keeper]
         phone:
           type: string
         hub:
@@ -1167,7 +1167,7 @@ components:
           type: string
         role:
           type: string
-          enum: [driver, picker, sorter, loader, supervisor, security]
+          enum: [driver, picker, sorter, loader, supervisor, security, house_keeper]
         phone:
           type: string
         hub:

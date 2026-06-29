@@ -35,11 +35,11 @@ function toApi(row: typeof staffTable.$inferSelect, isCheckedIn = false, checkIn
 
 // POST /staff/login  (must be before /staff/:id)
 router.post("/staff/login", async (req, res) => {
-  const { employeeId, password } = req.body as { employeeId?: string; password?: string };
-  if (!employeeId || !password) {
-    return res.status(400).json({ error: "employeeId and password required" });
+  const { phone, password } = req.body as { phone?: string; password?: string };
+  if (!phone || !password) {
+    return res.status(400).json({ error: "phone and password required" });
   }
-  const [row] = await db.select().from(staffTable).where(eq(staffTable.employeeId, employeeId));
+  const [row] = await db.select().from(staffTable).where(eq(staffTable.phone, phone));
   if (!row || row.password !== password) {
     return res.status(401).json({ error: "Invalid credentials" });
   }

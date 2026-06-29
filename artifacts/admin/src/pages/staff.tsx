@@ -37,16 +37,17 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 
-const ROLES = ["driver", "picker", "sorter", "loader", "supervisor", "security"] as const;
+const ROLES = ["driver", "picker", "sorter", "loader", "supervisor", "security", "house_keeper"] as const;
 type Role = (typeof ROLES)[number];
 
 const ROLE_CONFIG: Record<Role, { label: string; color: string; bg: string }> = {
-  driver:     { label: "Driver",     color: "#1D4ED8", bg: "#DBEAFE" },
-  picker:     { label: "Picker",     color: "#7C3AED", bg: "#EDE9FE" },
-  sorter:     { label: "Sorter",     color: "#D97706", bg: "#FEF3C7" },
-  loader:     { label: "Loader",     color: "#EA580C", bg: "#FFEDD5" },
-  supervisor: { label: "Supervisor", color: "#059669", bg: "#D1FAE5" },
-  security:   { label: "Security",   color: "#64748B", bg: "#F1F5F9" },
+  driver:       { label: "Driver",       color: "#1D4ED8", bg: "#DBEAFE" },
+  picker:       { label: "Picker",       color: "#7C3AED", bg: "#EDE9FE" },
+  sorter:       { label: "Sorter",       color: "#D97706", bg: "#FEF3C7" },
+  loader:       { label: "Loader",       color: "#EA580C", bg: "#FFEDD5" },
+  supervisor:   { label: "Supervisor",   color: "#059669", bg: "#D1FAE5" },
+  security:     { label: "Security",     color: "#64748B", bg: "#F1F5F9" },
+  house_keeper: { label: "House Keeper", color: "#0891B2", bg: "#CFFAFE" },
 };
 
 const HUBS = [
@@ -337,7 +338,7 @@ export default function StaffPage() {
                   value={form.role}
                   onValueChange={(v) => {
                     const r = v as Role;
-                    const prefix = { driver: "CV-DRV-", picker: "CV-PCK-", sorter: "CV-SRT-", loader: "CV-LDR-", supervisor: "CV-SUP-", security: "CV-SEC-" }[r];
+                    const prefix = { driver: "CV-DRV-", picker: "CV-PCK-", sorter: "CV-SRT-", loader: "CV-LDR-", supervisor: "CV-SUP-", security: "CV-SEC-", house_keeper: "CV-HKP-" }[r];
                     setForm({ ...form, role: r, employeeId: form.employeeId || `${prefix}00X` });
                   }}
                 >
