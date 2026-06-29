@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
+import logoUrl from "@assets/Screenshot_2026-06-29_at_8.17.10_PM_1782744451491.png";
 import { 
   LayoutDashboard, 
   Truck, 
@@ -74,8 +75,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-muted/30">
         <Sidebar className="border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-          <SidebarHeader className="h-16 flex items-center px-6 font-bold text-xl tracking-tight text-white border-b border-sidebar-border">
-            Coldverse
+          <SidebarHeader className="h-16 flex items-center px-6 border-b border-sidebar-border">
+            <img src={logoUrl} alt="Coldverse" className="h-9 w-auto object-contain" />
           </SidebarHeader>
           <SidebarContent>
             <NavGroup label="Operations" items={OPS_NAV} location={location} />

@@ -66,20 +66,18 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.logoSection}>
-            <View style={styles.logoCircle}>
+            <View style={styles.logoWrapper}>
               <Image
-                source={require("../assets/images/icon.png")}
+                source={require("../assets/images/logo.png")}
                 style={styles.logoImage}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             </View>
-            <Text style={styles.brandName}>COLDVERSE</Text>
-            <Text style={styles.brandTagline}>Supply Chain Pvt. Ltd.</Text>
-            <Text style={styles.appLabel}>Driver Portal</Text>
+            <Text style={styles.appLabel}>Staff Portal</Text>
           </View>
 
           <View style={[styles.card, { backgroundColor: "#FFFFFF" }]}>
-            <Text style={[styles.cardTitle, { color: "#0A1628" }]}>Driver Login</Text>
+            <Text style={[styles.cardTitle, { color: "#0A1628" }]}>Staff Login</Text>
             <Text style={[styles.cardSubtitle, { color: "#6B7A8D" }]}>
               Enter your credentials to access deliveries
             </Text>
@@ -172,14 +170,14 @@ const styles = StyleSheet.create({
   },
   scroll: { paddingHorizontal: 24 },
   logoSection: { alignItems: "center", marginBottom: 32 },
-  logoCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 22,
-    overflow: "hidden",
+  logoWrapper: {
+    width: 220,
+    height: 80,
     marginBottom: 16,
-    borderWidth: 2,
-    borderColor: "#2E6BE6",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   logoImage: { width: "100%", height: "100%" },
   brandName: {
