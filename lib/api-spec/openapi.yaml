@@ -48,6 +48,12 @@ paths:
       operationId: getDashboardStats
       tags: [dashboard]
       summary: Get dashboard summary statistics
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+          description: Date filter (YYYY-MM-DD). Defaults to today.
       responses:
         "200":
           description: Dashboard stats
@@ -662,6 +668,9 @@ components:
         - totalVehicles
         - availableVehicles
         - totalCustomers
+        - staffPresent
+        - staffAbsent
+        - totalDeliveredValue
       properties:
         totalDeliveries:
           type: integer
@@ -685,6 +694,12 @@ components:
           type: integer
         totalCustomers:
           type: integer
+        staffPresent:
+          type: integer
+        staffAbsent:
+          type: integer
+        totalDeliveredValue:
+          type: number
 
     ActivityItem:
       type: object

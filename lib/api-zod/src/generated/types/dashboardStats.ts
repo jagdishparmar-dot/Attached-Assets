@@ -18,4 +18,7 @@ export interface DashboardStats {
   totalVehicles: number;
   availableVehicles: number;
   totalCustomers: number;
+  staffPresent: number;
+  staffAbsent: number;
+  totalDeliveredValue: number;
 }

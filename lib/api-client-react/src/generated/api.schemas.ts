@@ -21,6 +21,9 @@ export interface DashboardStats {
   totalVehicles: number;
   availableVehicles: number;
   totalCustomers: number;
+  staffPresent: number;
+  staffAbsent: number;
+  totalDeliveredValue: number;
 }
 
 export type ActivityItemType = typeof ActivityItemType[keyof typeof ActivityItemType];
@@ -614,6 +617,13 @@ export interface HubInput {
   lng: number;
   radiusMeters: number;
 }
+
+export type GetDashboardStatsParams = {
+/**
+ * Date filter (YYYY-MM-DD). Defaults to today.
+ */
+date?: string;
+};
 
 export type ListDeliveriesParams = {
 status?: ListDeliveriesStatus;

@@ -19,6 +19,10 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary Get dashboard summary statistics
  */
+export const GetDashboardStatsQueryParams = zod.object({
+  "date": zod.coerce.string().optional().describe('Date filter (YYYY-MM-DD). Defaults to today.')
+})
+
 export const GetDashboardStatsResponse = zod.object({
   "totalDeliveries": zod.number(),
   "pendingDeliveries": zod.number(),
@@ -30,7 +34,10 @@ export const GetDashboardStatsResponse = zod.object({
   "activeDrivers": zod.number(),
   "totalVehicles": zod.number(),
   "availableVehicles": zod.number(),
-  "totalCustomers": zod.number()
+  "totalCustomers": zod.number(),
+  "staffPresent": zod.number(),
+  "staffAbsent": zod.number(),
+  "totalDeliveredValue": zod.number()
 })
 
 

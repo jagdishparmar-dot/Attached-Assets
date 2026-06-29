@@ -30,6 +30,7 @@ export * from './driverStatus';
 export * from './driverUpdate';
 export * from './driverUpdateStatus';
 export * from './getAllAttendanceParams';
+export * from './getDashboardStatsParams';
 export * from './getMyAttendanceParams';
 export * from './healthStatus';
 export * from './hub';
