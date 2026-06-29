@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Coldverse Driver",
-    "slug": "mobile",
+    "name": "Coldverse",
+    "slug": "coldverse",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "coldverse",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -14,13 +14,15 @@
       "backgroundColor": "#0A2540"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.coldverse.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#0A2540"
-      }
+      },
+      "package": "com.coldverse.app"
     },
     "web": {
       "favicon": "./assets/images/icon.png"
