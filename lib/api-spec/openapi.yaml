@@ -3,20 +3,30 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Coldverse Supply Chain - Admin Panel API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Dashboard stats
+  - name: deliveries
+    description: Delivery management
+  - name: drivers
+    description: Driver management
+  - name: vehicles
+    description: Vehicle management
+  - name: customers
+    description: Customer management
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +34,303 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard summary statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/activity:
+    get:
+      operationId: getDashboardActivity
+      tags: [dashboard]
+      summary: Get recent delivery activity feed
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /deliveries:
+    get:
+      operationId: listDeliveries
+      tags: [deliveries]
+      summary: List all deliveries
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, assigned, in_transit, delivered, failed, rescheduled]
+        - in: query
+          name: date
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of deliveries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Delivery"
+    post:
+      operationId: createDelivery
+      tags: [deliveries]
+      summary: Create a new delivery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeliveryInput"
+      responses:
+        "201":
+          description: Delivery created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Delivery"
+        "400":
+          description: Validation error
+
+  /deliveries/{id}:
+    get:
+      operationId: getDelivery
+      tags: [deliveries]
+      summary: Get a delivery by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Delivery detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Delivery"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateDelivery
+      tags: [deliveries]
+      summary: Update a delivery (assign driver/vehicle, change status, etc.)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeliveryUpdate"
+      responses:
+        "200":
+          description: Updated delivery
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Delivery"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteDelivery
+      tags: [deliveries]
+      summary: Delete a delivery
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /drivers:
+    get:
+      operationId: listDrivers
+      tags: [drivers]
+      summary: List all drivers
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, inactive]
+      responses:
+        "200":
+          description: List of drivers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Driver"
+    post:
+      operationId: createDriver
+      tags: [drivers]
+      summary: Create a new driver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriverInput"
+      responses:
+        "201":
+          description: Driver created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+  /drivers/{id}:
+    get:
+      operationId: getDriver
+      tags: [drivers]
+      summary: Get a driver by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Driver detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateDriver
+      tags: [drivers]
+      summary: Update a driver
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriverUpdate"
+      responses:
+        "200":
+          description: Updated driver
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+  /vehicles:
+    get:
+      operationId: listVehicles
+      tags: [vehicles]
+      summary: List all vehicles
+      responses:
+        "200":
+          description: List of vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+    post:
+      operationId: createVehicle
+      tags: [vehicles]
+      summary: Create a new vehicle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleInput"
+      responses:
+        "201":
+          description: Vehicle created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List all customers
+      responses:
+        "200":
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create a new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+      responses:
+        "201":
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{id}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      summary: Get a customer by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +341,445 @@ components:
       required:
         - status
 
+    DashboardStats:
+      type: object
+      required:
+        - totalDeliveries
+        - pendingDeliveries
+        - assignedDeliveries
+        - inTransitDeliveries
+        - deliveredToday
+        - failedToday
+        - totalDrivers
+        - activeDrivers
+        - totalVehicles
+        - availableVehicles
+        - totalCustomers
+      properties:
+        totalDeliveries:
+          type: integer
+        pendingDeliveries:
+          type: integer
+        assignedDeliveries:
+          type: integer
+        inTransitDeliveries:
+          type: integer
+        deliveredToday:
+          type: integer
+        failedToday:
+          type: integer
+        totalDrivers:
+          type: integer
+        activeDrivers:
+          type: integer
+        totalVehicles:
+          type: integer
+        availableVehicles:
+          type: integer
+        totalCustomers:
+          type: integer
+
+    ActivityItem:
+      type: object
+      required:
+        - id
+        - type
+        - message
+        - time
+        - status
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [delivery_created, driver_assigned, vehicle_assigned, status_changed, delivery_completed, delivery_failed]
+        message:
+          type: string
+        time:
+          type: string
+        status:
+          type: string
+        deliveryNumber:
+          type: ["string", "null"]
+        driverName:
+          type: ["string", "null"]
+
+    Driver:
+      type: object
+      required:
+        - id
+        - name
+        - employeeId
+        - phone
+        - licenseNumber
+        - status
+        - hub
+        - joiningDate
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        employeeId:
+          type: string
+        phone:
+          type: string
+        licenseNumber:
+          type: string
+        licenseExpiry:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        emergencyContact:
+          type: ["string", "null"]
+        aadhaarNumber:
+          type: ["string", "null"]
+        panNumber:
+          type: ["string", "null"]
+        hub:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        joiningDate:
+          type: string
+        currentVehicleId:
+          type: ["integer", "null"]
+        deliveriesToday:
+          type: integer
+        deliveriesTotal:
+          type: integer
+
+    DriverInput:
+      type: object
+      required:
+        - name
+        - employeeId
+        - phone
+        - licenseNumber
+        - hub
+        - joiningDate
+      properties:
+        name:
+          type: string
+        employeeId:
+          type: string
+        phone:
+          type: string
+        licenseNumber:
+          type: string
+        licenseExpiry:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        emergencyContact:
+          type: ["string", "null"]
+        aadhaarNumber:
+          type: ["string", "null"]
+        panNumber:
+          type: ["string", "null"]
+        hub:
+          type: string
+        joiningDate:
+          type: string
+
+    DriverUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        licenseNumber:
+          type: string
+        licenseExpiry:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        emergencyContact:
+          type: ["string", "null"]
+        hub:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+
+    Vehicle:
+      type: object
+      required:
+        - id
+        - vehicleNumber
+        - vehicleType
+        - capacity
+        - fuelType
+        - status
+      properties:
+        id:
+          type: integer
+        vehicleNumber:
+          type: string
+        vehicleType:
+          type: string
+          enum: [refrigerated_truck, chilled_van, ambient_truck, motorcycle]
+        capacity:
+          type: string
+        fuelType:
+          type: string
+          enum: [diesel, petrol, cng, electric]
+        gpsDeviceId:
+          type: ["string", "null"]
+        insuranceExpiry:
+          type: ["string", "null"]
+        fitnessExpiry:
+          type: ["string", "null"]
+        rcExpiry:
+          type: ["string", "null"]
+        pucExpiry:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [available, in_use, maintenance, inactive]
+        currentDriverId:
+          type: ["integer", "null"]
+        currentDriverName:
+          type: ["string", "null"]
+
+    VehicleInput:
+      type: object
+      required:
+        - vehicleNumber
+        - vehicleType
+        - capacity
+        - fuelType
+      properties:
+        vehicleNumber:
+          type: string
+        vehicleType:
+          type: string
+          enum: [refrigerated_truck, chilled_van, ambient_truck, motorcycle]
+        capacity:
+          type: string
+        fuelType:
+          type: string
+          enum: [diesel, petrol, cng, electric]
+        gpsDeviceId:
+          type: ["string", "null"]
+        insuranceExpiry:
+          type: ["string", "null"]
+        fitnessExpiry:
+          type: ["string", "null"]
+
+    Customer:
+      type: object
+      required:
+        - id
+        - customerCode
+        - companyName
+        - address
+        - contactPerson
+        - phone
+      properties:
+        id:
+          type: integer
+        customerCode:
+          type: string
+        companyName:
+          type: string
+        address:
+          type: string
+        area:
+          type: ["string", "null"]
+        city:
+          type: string
+        contactPerson:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        deliveryWindow:
+          type: ["string", "null"]
+        specialInstructions:
+          type: ["string", "null"]
+        totalDeliveries:
+          type: integer
+
+    CustomerInput:
+      type: object
+      required:
+        - customerCode
+        - companyName
+        - address
+        - city
+        - contactPerson
+        - phone
+      properties:
+        customerCode:
+          type: string
+        companyName:
+          type: string
+        address:
+          type: string
+        area:
+          type: ["string", "null"]
+        city:
+          type: string
+        contactPerson:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        deliveryWindow:
+          type: ["string", "null"]
+        specialInstructions:
+          type: ["string", "null"]
+
+    Delivery:
+      type: object
+      required:
+        - id
+        - deliveryNumber
+        - orderNumber
+        - status
+        - priority
+        - customerId
+        - customerName
+        - deliveryAddress
+        - deliveryCity
+        - deliveryDate
+        - deliveryWindow
+        - totalWeight
+        - products
+      properties:
+        id:
+          type: integer
+        deliveryNumber:
+          type: string
+        orderNumber:
+          type: string
+        invoiceNumber:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, assigned, in_transit, delivered, failed, rescheduled]
+        priority:
+          type: string
+          enum: [high, normal, low]
+        customerId:
+          type: integer
+        customerName:
+          type: string
+        customerPhone:
+          type: ["string", "null"]
+        deliveryAddress:
+          type: string
+        deliveryArea:
+          type: ["string", "null"]
+        deliveryCity:
+          type: string
+        deliveryDate:
+          type: string
+        deliveryWindow:
+          type: string
+        totalWeight:
+          type: string
+        specialHandling:
+          type: ["string", "null"]
+        remarks:
+          type: ["string", "null"]
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeliveryProduct"
+        assignedDriverId:
+          type: ["integer", "null"]
+        assignedDriverName:
+          type: ["string", "null"]
+        assignedVehicleId:
+          type: ["integer", "null"]
+        assignedVehicleNumber:
+          type: ["string", "null"]
+        failureReason:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    DeliveryProduct:
+      type: object
+      required:
+        - name
+        - quantity
+      properties:
+        name:
+          type: string
+        quantity:
+          type: integer
+        weight:
+          type: ["string", "null"]
+        temperature:
+          type: ["string", "null"]
+
+    DeliveryInput:
+      type: object
+      required:
+        - orderNumber
+        - customerId
+        - deliveryAddress
+        - deliveryCity
+        - deliveryDate
+        - deliveryWindow
+        - priority
+        - products
+      properties:
+        orderNumber:
+          type: string
+        invoiceNumber:
+          type: ["string", "null"]
+        customerId:
+          type: integer
+        deliveryAddress:
+          type: string
+        deliveryArea:
+          type: ["string", "null"]
+        deliveryCity:
+          type: string
+        deliveryDate:
+          type: string
+        deliveryWindow:
+          type: string
+        priority:
+          type: string
+          enum: [high, normal, low]
+        specialHandling:
+          type: ["string", "null"]
+        remarks:
+          type: ["string", "null"]
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeliveryProduct"
+
+    DeliveryUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, assigned, in_transit, delivered, failed, rescheduled]
+        priority:
+          type: string
+          enum: [high, normal, low]
+        assignedDriverId:
+          type: ["integer", "null"]
+        assignedVehicleId:
+          type: ["integer", "null"]
+        deliveryDate:
+          type: string
+        deliveryWindow:
+          type: string
+        remarks:
+          type: ["string", "null"]
+        failureReason:
+          type: ["string", "null"]

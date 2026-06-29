@@ -1,0 +1,1 @@
+- [Coldverse project](coldverse-project.md) — DMS with Expo Driver App (mobile) + React/Vite Admin Panel (admin) + Express API server; DB provisioned with 5 tables; OTP removed from driver app.
