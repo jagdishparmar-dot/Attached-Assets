@@ -11,6 +11,23 @@ Delivery Management System for Coldverse Supply Chain Pvt. Ltd. — manages driv
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string, `SESSION_SECRET`
 
+## Mobile release to Google Play (EAS Submit)
+
+New builds upload straight to the Play **internal testing** track — no manual `.aab` download/upload.
+
+One-time setup (manual, done in Google Play Console + EAS):
+1. In Google Play Console → Setup → API access, create/link a **service account** and grant it the *Release manager* (or *Release to testing tracks*) permission. Download its **JSON key**.
+2. Place the key at `artifacts/mobile/google-play-service-account.json` (gitignored — never commit it). Locally that is enough; `eas.json` references it via `submit.production.android.serviceAccountKeyPath`.
+3. The app must already exist in Play Console with package `com.coldverse.app` and have one build uploaded by hand for the very first release (Google requires the first `.aab` to be uploaded manually).
+
+Cut a new release (from `artifacts/mobile/`, always with `EAS_NO_VCS=1`):
+- Build + auto-submit in one step:
+  `EAS_NO_VCS=1 ./node_modules/.bin/eas build --platform android --profile production --auto-submit --non-interactive`
+- Or submit an existing build separately:
+  `EAS_NO_VCS=1 ./node_modules/.bin/eas submit --platform android --profile production --non-interactive`
+
+`production` build uses `autoIncrement` so versionCode bumps automatically each release. Submit config: track `internal`, releaseStatus `completed`.
+
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
