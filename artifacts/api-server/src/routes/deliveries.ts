@@ -52,6 +52,13 @@ function formatDelivery(d: typeof deliveriesTable.$inferSelect) {
   };
 }
 
+router.get("/deliveries/next-dc-number", async (req, res): Promise<void> => {
+  const all = await db.select({ id: deliveriesTable.id }).from(deliveriesTable);
+  const year = new Date().getFullYear();
+  const seq = String(all.length + 1).padStart(4, "0");
+  res.json({ orderNumber: `DC-${year}-${seq}` });
+});
+
 router.get("/deliveries", async (req, res): Promise<void> => {
   const query = ListDeliveriesQueryParams.safeParse(req.query);
   let deliveries = await db.select().from(deliveriesTable).orderBy(deliveriesTable.createdAt);

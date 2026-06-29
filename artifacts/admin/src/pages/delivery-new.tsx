@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useCreateDelivery, useListCustomers } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +29,15 @@ export default function DeliveryNew() {
     specialHandling: "",
     remarks: "",
   });
+
+  useEffect(() => {
+    fetch("/api/deliveries/next-dc-number")
+      .then((r) => r.json())
+      .then((d: { orderNumber: string }) => {
+        setFormData((prev) => ({ ...prev, orderNumber: d.orderNumber }));
+      })
+      .catch(() => {});
+  }, []);
 
   const handleCustomerChange = (customerId: string) => {
     const customer = customers?.find((c) => c.id.toString() === customerId);
@@ -147,8 +156,28 @@ export default function DeliveryNew() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Order Number *</Label>
-                <Input required value={formData.orderNumber} onChange={e => setFormData({...formData, orderNumber: e.target.value})} />
+                <div className="flex items-center justify-between">
+                  <Label>DC Number (Order No.) *</Label>
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                    onClick={() => {
+                      fetch("/api/deliveries/next-dc-number")
+                        .then((r) => r.json())
+                        .then((d: { orderNumber: string }) => setFormData((p) => ({ ...p, orderNumber: d.orderNumber })))
+                        .catch(() => {});
+                    }}
+                  >
+                    ↻ Regenerate
+                  </button>
+                </div>
+                <Input
+                  required
+                  value={formData.orderNumber}
+                  onChange={e => setFormData({...formData, orderNumber: e.target.value})}
+                  className="font-mono font-medium"
+                  placeholder="Auto-generating…"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Invoice Number</Label>
