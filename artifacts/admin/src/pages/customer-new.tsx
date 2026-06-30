@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
+import { BulkUploadDialog } from "@/components/BulkUploadDialog";
 
 export default function CustomerNew() {
   const [, navigate] = useLocation();
@@ -55,6 +56,9 @@ export default function CustomerNew() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-3xl font-bold tracking-tight">Add New Customer</h2>
+        <div className="ml-auto">
+          <BulkUploadDialog onImported={() => navigate("/admin/customers")} />
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
