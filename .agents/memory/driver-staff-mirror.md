@@ -14,9 +14,9 @@ were otherwise disjoint, so drivers never showed on the Staff page.
 **How to apply:**
 - Create: insert driver + mirror staff row inside one `db.transaction` (atomic).
   Use `.onConflictDoNothing({ target: staffTable.employeeId })` so an existing
-  employeeId in staff doesn't break driver creation. Default password `cold@123`
-  (matches the seed convention; the whole app uses plaintext passwords — pre-existing
-  model, out of scope to rework).
+  employeeId in staff doesn't break driver creation. The mirrored staff row gets the
+  app's default seed password (see the seed script for the convention; the whole app
+  uses plaintext passwords — pre-existing model, out of scope to rework).
 - Update: inside a transaction, after updating the driver, `UPDATE staff ... WHERE
   employee_id = driver.employeeId` to keep name/phone/hub/status/license/etc. in sync.
   Do NOT change employeeId or role on sync.

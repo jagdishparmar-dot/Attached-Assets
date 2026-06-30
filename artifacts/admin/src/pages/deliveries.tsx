@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { BulkUploadDeliveryDialog } from "@/components/BulkUploadDeliveryDialog";
 
 type DeliveryRow = Delivery;
 
@@ -105,10 +106,13 @@ export default function Deliveries() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Deliveries</h2>
-        <Button onClick={() => navigate("/admin/deliveries/new")}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Delivery
-        </Button>
+        <div className="flex items-center gap-2">
+          <BulkUploadDeliveryDialog onImported={() => refetch()} />
+          <Button onClick={() => navigate("/admin/deliveries/new")}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Delivery
+          </Button>
+        </div>
       </div>
 
       <Card>

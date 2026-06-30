@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db, deliveriesTable, customersTable, driversTable, vehiclesTable, activityTable } from "@workspace/db";
 import {
   CreateDeliveryBody,
@@ -8,18 +8,26 @@ import {
   UpdateDeliveryParams,
   DeleteDeliveryParams,
   ListDeliveriesQueryParams,
+  BulkCreateDeliveriesBody,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-let deliveryCounter = 0;
-
 async function getNextDeliveryNumber(): Promise<string> {
-  const [row] = await db.select().from(deliveriesTable).orderBy(deliveriesTable.id).limit(1);
   const date = new Date();
   const yyyymmdd = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
-  deliveryCounter++;
-  return `CV-DEL-${yyyymmdd}-${String(deliveryCounter).padStart(4, "0")}`;
+  const prefix = `CV-DEL-${yyyymmdd}-`;
+  // Derive the next sequence from existing numbers so it survives restarts and
+  // stays unique within a bulk loop (each prior insert is reflected here).
+  const existing = await db.select({ deliveryNumber: deliveriesTable.deliveryNumber }).from(deliveriesTable);
+  let max = 0;
+  for (const r of existing) {
+    if (r.deliveryNumber.startsWith(prefix)) {
+      const seq = parseInt(r.deliveryNumber.slice(prefix.length), 10);
+      if (Number.isInteger(seq) && seq > max) max = seq;
+    }
+  }
+  return `${prefix}${String(max + 1).padStart(4, "0")}`;
 }
 
 function formatDelivery(d: typeof deliveriesTable.$inferSelect) {
@@ -131,6 +139,95 @@ router.post("/deliveries", async (req, res): Promise<void> => {
   }
 
   res.status(201).json(formatDelivery(delivery));
+});
+
+// POST /deliveries/bulk  (must be before /deliveries/:id)
+router.post("/deliveries/bulk", async (req, res): Promise<void> => {
+  const parsed = BulkCreateDeliveriesBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const errors: { row: number; message: string }[] = [];
+  let created = 0;
+
+  for (let i = 0; i < parsed.data.deliveries.length; i++) {
+    const d = parsed.data.deliveries[i];
+    try {
+      const [customer] = await db.select().from(customersTable).where(eq(customersTable.id, d.customerId));
+      if (!customer) {
+        errors.push({ row: i + 1, message: `Customer ID ${d.customerId} not found` });
+        continue;
+      }
+
+      const totalWeight = Array.isArray(d.products)
+        ? `${d.products.reduce((sum: number, p: { quantity: number }) => sum + p.quantity, 0)} units`
+        : "0 units";
+
+      // delivery_number is server-generated and is the only unique column. Under
+      // concurrency two requests can compute the same next number, so run each row's
+      // writes in one transaction and retry with a freshly generated number on a
+      // unique-violation (a re-scan then reflects the other request's committed row).
+      let attempt = 0;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const deliveryNumber = await getNextDeliveryNumber();
+        try {
+          await db.transaction(async (tx) => {
+            await tx.insert(deliveriesTable).values({
+              deliveryNumber,
+              orderNumber: d.orderNumber,
+              invoiceNumber: d.invoiceNumber ?? null,
+              status: "pending",
+              priority: d.priority,
+              customerId: d.customerId,
+              customerName: customer.companyName,
+              customerPhone: customer.phone ?? null,
+              deliveryAddress: d.deliveryAddress,
+              deliveryArea: d.deliveryArea ?? null,
+              deliveryCity: d.deliveryCity,
+              deliveryDate: d.deliveryDate,
+              deliveryWindow: d.deliveryWindow,
+              totalWeight,
+              specialHandling: d.specialHandling ?? null,
+              remarks: d.remarks ?? null,
+              products: d.products ?? [],
+            });
+
+            await tx.insert(activityTable).values({
+              type: "delivery_created",
+              message: `New delivery ${deliveryNumber} created for ${customer.companyName}`,
+              status: "info",
+              deliveryNumber,
+              driverName: null,
+            });
+
+            await tx
+              .update(customersTable)
+              .set({ totalDeliveries: sql`${customersTable.totalDeliveries} + 1` })
+              .where(eq(customersTable.id, customer.id));
+          });
+          break;
+        } catch (err) {
+          const cause = err instanceof Error ? (err.cause as { code?: string; message?: string } | undefined) : undefined;
+          const text = `${err instanceof Error ? err.message : ""} ${cause?.message ?? ""}`;
+          const isDuplicate = cause?.code === "23505" || /unique|duplicate/i.test(text);
+          if (isDuplicate && attempt < 5) {
+            attempt++;
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      created++;
+    } catch {
+      errors.push({ row: i + 1, message: "Could not import this row" });
+    }
+  }
+
+  res.json({ created, failed: errors.length, errors });
 });
 
 router.get("/deliveries/:id", async (req, res): Promise<void> => {

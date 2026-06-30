@@ -26,6 +26,8 @@ import type {
   AttendanceEntry,
   BulkCustomerImport,
   BulkCustomerResult,
+  BulkDeliveryImport,
+  BulkDeliveryResult,
   BulkStaffImport,
   BulkStaffResult,
   Customer,
@@ -477,6 +479,76 @@ export const useCreateDelivery = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getCreateDeliveryMutationOptions(options));
+    }
+
+export const getBulkCreateDeliveriesUrl = () => {
+
+
+
+
+  return `/api/deliveries/bulk`
+}
+
+/**
+ * @summary Bulk create deliveries from an uploaded list
+ */
+export const bulkCreateDeliveries = async (bulkDeliveryImport: BulkDeliveryImport, options?: RequestInit): Promise<BulkDeliveryResult> => {
+
+  return customFetch<BulkDeliveryResult>(getBulkCreateDeliveriesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(bulkDeliveryImport)
+  }
+);}
+
+
+
+
+export const getBulkCreateDeliveriesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCreateDeliveries>>, TError,{data: BodyType<BulkDeliveryImport>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof bulkCreateDeliveries>>, TError,{data: BodyType<BulkDeliveryImport>}, TContext> => {
+
+const mutationKey = ['bulkCreateDeliveries'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkCreateDeliveries>>, {data: BodyType<BulkDeliveryImport>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  bulkCreateDeliveries(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkCreateDeliveriesMutationResult = NonNullable<Awaited<ReturnType<typeof bulkCreateDeliveries>>>
+    export type BulkCreateDeliveriesMutationBody = BodyType<BulkDeliveryImport>
+    export type BulkCreateDeliveriesMutationError = ErrorType<void>
+
+    /**
+ * @summary Bulk create deliveries from an uploaded list
+ */
+export const useBulkCreateDeliveries = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCreateDeliveries>>, TError,{data: BodyType<BulkDeliveryImport>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof bulkCreateDeliveries>>,
+        TError,
+        {data: BodyType<BulkDeliveryImport>},
+        TContext
+      > => {
+      return useMutation(getBulkCreateDeliveriesMutationOptions(options));
     }
 
 export const getGetDeliveryUrl = (id: number,) => {

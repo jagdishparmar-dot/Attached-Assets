@@ -384,6 +384,67 @@ export interface BulkStaffResult {
   errors: BulkStaffResultErrorsItem[];
 }
 
+export type DeliveryInputPriority = typeof DeliveryInputPriority[keyof typeof DeliveryInputPriority];
+
+
+export const DeliveryInputPriority = {
+  high: 'high',
+  normal: 'normal',
+  low: 'low',
+} as const;
+
+export interface DeliveryProduct {
+  name: string;
+  quantity: number;
+  /** @nullable */
+  weight?: string | null;
+  /** @nullable */
+  temperature?: string | null;
+  /**
+     * Unit price / amount for this product line
+     * @nullable
+     */
+  amount?: number | null;
+}
+
+export interface DeliveryInput {
+  orderNumber: string;
+  /** @nullable */
+  invoiceNumber?: string | null;
+  customerId: number;
+  deliveryAddress: string;
+  /** @nullable */
+  deliveryArea?: string | null;
+  deliveryCity: string;
+  deliveryDate: string;
+  deliveryWindow: string;
+  priority: DeliveryInputPriority;
+  /** @nullable */
+  specialHandling?: string | null;
+  /** @nullable */
+  remarks?: string | null;
+  products: DeliveryProduct[];
+}
+
+export interface BulkDeliveryImport {
+  /**
+     * @minItems 1
+     * @maxItems 1000
+     */
+  deliveries: DeliveryInput[];
+}
+
+export type BulkDeliveryResultErrorsItem = {
+  row: number;
+  message: string;
+};
+
+export interface BulkDeliveryResult {
+  created: number;
+  failed: number;
+  errors: BulkDeliveryResultErrorsItem[];
+}
+
 export type DeliveryStatus = typeof DeliveryStatus[keyof typeof DeliveryStatus];
 
 
@@ -404,20 +465,6 @@ export const DeliveryPriority = {
   normal: 'normal',
   low: 'low',
 } as const;
-
-export interface DeliveryProduct {
-  name: string;
-  quantity: number;
-  /** @nullable */
-  weight?: string | null;
-  /** @nullable */
-  temperature?: string | null;
-  /**
-     * Unit price / amount for this product line
-     * @nullable
-     */
-  amount?: number | null;
-}
 
 export interface Delivery {
   id: number;
@@ -456,34 +503,6 @@ export interface Delivery {
   /** @nullable */
   completedAt?: string | null;
   createdAt?: string;
-}
-
-export type DeliveryInputPriority = typeof DeliveryInputPriority[keyof typeof DeliveryInputPriority];
-
-
-export const DeliveryInputPriority = {
-  high: 'high',
-  normal: 'normal',
-  low: 'low',
-} as const;
-
-export interface DeliveryInput {
-  orderNumber: string;
-  /** @nullable */
-  invoiceNumber?: string | null;
-  customerId: number;
-  deliveryAddress: string;
-  /** @nullable */
-  deliveryArea?: string | null;
-  deliveryCity: string;
-  deliveryDate: string;
-  deliveryWindow: string;
-  priority: DeliveryInputPriority;
-  /** @nullable */
-  specialHandling?: string | null;
-  /** @nullable */
-  remarks?: string | null;
-  products: DeliveryProduct[];
 }
 
 export type DeliveryUpdateStatus = typeof DeliveryUpdateStatus[keyof typeof DeliveryUpdateStatus];

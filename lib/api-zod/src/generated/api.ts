@@ -160,6 +160,46 @@ export const CreateDeliveryResponse = zod.object({
 
 
 /**
+ * @summary Bulk create deliveries from an uploaded list
+ */
+export const bulkCreateDeliveriesBodyDeliveriesMax = 1000;
+
+
+
+export const BulkCreateDeliveriesBody = zod.object({
+  "deliveries": zod.array(zod.object({
+  "orderNumber": zod.string(),
+  "invoiceNumber": zod.string().nullish(),
+  "customerId": zod.number(),
+  "deliveryAddress": zod.string(),
+  "deliveryArea": zod.string().nullish(),
+  "deliveryCity": zod.string(),
+  "deliveryDate": zod.string(),
+  "deliveryWindow": zod.string(),
+  "priority": zod.enum(['high', 'normal', 'low']),
+  "specialHandling": zod.string().nullish(),
+  "remarks": zod.string().nullish(),
+  "products": zod.array(zod.object({
+  "name": zod.string(),
+  "quantity": zod.number(),
+  "weight": zod.string().nullish(),
+  "temperature": zod.string().nullish(),
+  "amount": zod.number().nullish().describe('Unit price \/ amount for this product line')
+}))
+})).min(1).max(bulkCreateDeliveriesBodyDeliveriesMax)
+})
+
+export const BulkCreateDeliveriesResponse = zod.object({
+  "created": zod.number(),
+  "failed": zod.number(),
+  "errors": zod.array(zod.object({
+  "row": zod.number(),
+  "message": zod.string()
+}))
+})
+
+
+/**
  * @summary Get a delivery by ID
  */
 export const GetDeliveryParams = zod.object({
