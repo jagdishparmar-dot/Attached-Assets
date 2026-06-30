@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
+import { BulkUploadStaffDialog } from "@/components/BulkUploadStaffDialog";
 
 const ROLES = ["driver", "picker", "sorter", "loader", "supervisor", "security", "house_keeper"] as const;
 type Role = (typeof ROLES)[number];
@@ -224,10 +225,13 @@ export default function StaffPage() {
           <h1 className="text-3xl font-bold tracking-tight">Staff</h1>
           <p className="text-muted-foreground mt-1">Manage all warehouse & delivery staff</p>
         </div>
-        <Button onClick={() => setShowAdd(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Staff
-        </Button>
+        <div className="flex items-center gap-2">
+          <BulkUploadStaffDialog onImported={() => refetch()} />
+          <Button onClick={() => setShowAdd(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Staff
+          </Button>
+        </div>
       </div>
 
       {/* Role stat chips */}

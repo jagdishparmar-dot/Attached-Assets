@@ -738,6 +738,43 @@ export const CreateStaffResponse = zod.object({
 
 
 /**
+ * @summary Bulk create staff members from an uploaded list
+ */
+export const bulkCreateStaffBodyStaffMax = 1000;
+
+
+
+export const BulkCreateStaffBody = zod.object({
+  "staff": zod.array(zod.object({
+  "name": zod.string(),
+  "employeeId": zod.string(),
+  "role": zod.enum(['driver', 'picker', 'sorter', 'loader', 'supervisor', 'security', 'house_keeper']),
+  "phone": zod.string(),
+  "hub": zod.string(),
+  "joiningDate": zod.string(),
+  "password": zod.string(),
+  "address": zod.string().nullish(),
+  "emergencyContact": zod.string().nullish(),
+  "aadhaarNumber": zod.string().nullish(),
+  "panNumber": zod.string().nullish(),
+  "licenseNumber": zod.string().nullish(),
+  "licenseExpiry": zod.string().nullish(),
+  "shiftStart": zod.string().nullish(),
+  "shiftEnd": zod.string().nullish()
+})).min(1).max(bulkCreateStaffBodyStaffMax)
+})
+
+export const BulkCreateStaffResponse = zod.object({
+  "created": zod.number(),
+  "failed": zod.number(),
+  "errors": zod.array(zod.object({
+  "row": zod.number(),
+  "message": zod.string()
+}))
+})
+
+
+/**
  * @summary Get a staff member by ID
  */
 export const GetStaffMemberParams = zod.object({

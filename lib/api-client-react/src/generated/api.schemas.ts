@@ -326,6 +326,64 @@ export interface BulkCustomerResult {
   errors: BulkCustomerResultErrorsItem[];
 }
 
+export type StaffInputRole = typeof StaffInputRole[keyof typeof StaffInputRole];
+
+
+export const StaffInputRole = {
+  driver: 'driver',
+  picker: 'picker',
+  sorter: 'sorter',
+  loader: 'loader',
+  supervisor: 'supervisor',
+  security: 'security',
+  house_keeper: 'house_keeper',
+} as const;
+
+export interface StaffInput {
+  name: string;
+  employeeId: string;
+  role: StaffInputRole;
+  phone: string;
+  hub: string;
+  joiningDate: string;
+  password: string;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  emergencyContact?: string | null;
+  /** @nullable */
+  aadhaarNumber?: string | null;
+  /** @nullable */
+  panNumber?: string | null;
+  /** @nullable */
+  licenseNumber?: string | null;
+  /** @nullable */
+  licenseExpiry?: string | null;
+  /** @nullable */
+  shiftStart?: string | null;
+  /** @nullable */
+  shiftEnd?: string | null;
+}
+
+export interface BulkStaffImport {
+  /**
+     * @minItems 1
+     * @maxItems 1000
+     */
+  staff: StaffInput[];
+}
+
+export type BulkStaffResultErrorsItem = {
+  row: number;
+  message: string;
+};
+
+export interface BulkStaffResult {
+  created: number;
+  failed: number;
+  errors: BulkStaffResultErrorsItem[];
+}
+
 export type DeliveryStatus = typeof DeliveryStatus[keyof typeof DeliveryStatus];
 
 
@@ -517,45 +575,6 @@ export interface StaffMember {
   checkInLat?: number | null;
   /** @nullable */
   checkInLng?: number | null;
-}
-
-export type StaffInputRole = typeof StaffInputRole[keyof typeof StaffInputRole];
-
-
-export const StaffInputRole = {
-  driver: 'driver',
-  picker: 'picker',
-  sorter: 'sorter',
-  loader: 'loader',
-  supervisor: 'supervisor',
-  security: 'security',
-  house_keeper: 'house_keeper',
-} as const;
-
-export interface StaffInput {
-  name: string;
-  employeeId: string;
-  role: StaffInputRole;
-  phone: string;
-  hub: string;
-  joiningDate: string;
-  password: string;
-  /** @nullable */
-  address?: string | null;
-  /** @nullable */
-  emergencyContact?: string | null;
-  /** @nullable */
-  aadhaarNumber?: string | null;
-  /** @nullable */
-  panNumber?: string | null;
-  /** @nullable */
-  licenseNumber?: string | null;
-  /** @nullable */
-  licenseExpiry?: string | null;
-  /** @nullable */
-  shiftStart?: string | null;
-  /** @nullable */
-  shiftEnd?: string | null;
 }
 
 export type StaffUpdateStatus = typeof StaffUpdateStatus[keyof typeof StaffUpdateStatus];

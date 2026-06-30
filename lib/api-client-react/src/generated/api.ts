@@ -26,6 +26,8 @@ import type {
   AttendanceEntry,
   BulkCustomerImport,
   BulkCustomerResult,
+  BulkStaffImport,
+  BulkStaffResult,
   Customer,
   CustomerInput,
   CustomerUpdate,
@@ -1802,6 +1804,76 @@ export const useCreateStaff = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getCreateStaffMutationOptions(options));
+    }
+
+export const getBulkCreateStaffUrl = () => {
+
+
+
+
+  return `/api/staff/bulk`
+}
+
+/**
+ * @summary Bulk create staff members from an uploaded list
+ */
+export const bulkCreateStaff = async (bulkStaffImport: BulkStaffImport, options?: RequestInit): Promise<BulkStaffResult> => {
+
+  return customFetch<BulkStaffResult>(getBulkCreateStaffUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(bulkStaffImport)
+  }
+);}
+
+
+
+
+export const getBulkCreateStaffMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCreateStaff>>, TError,{data: BodyType<BulkStaffImport>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof bulkCreateStaff>>, TError,{data: BodyType<BulkStaffImport>}, TContext> => {
+
+const mutationKey = ['bulkCreateStaff'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkCreateStaff>>, {data: BodyType<BulkStaffImport>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  bulkCreateStaff(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkCreateStaffMutationResult = NonNullable<Awaited<ReturnType<typeof bulkCreateStaff>>>
+    export type BulkCreateStaffMutationBody = BodyType<BulkStaffImport>
+    export type BulkCreateStaffMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Bulk create staff members from an uploaded list
+ */
+export const useBulkCreateStaff = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCreateStaff>>, TError,{data: BodyType<BulkStaffImport>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof bulkCreateStaff>>,
+        TError,
+        {data: BodyType<BulkStaffImport>},
+        TContext
+      > => {
+      return useMutation(getBulkCreateStaffMutationOptions(options));
     }
 
 export const getGetStaffMemberUrl = (id: number,) => {

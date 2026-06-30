@@ -2,10 +2,11 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { staffTable, attendanceRecords } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
+import { BulkCreateStaffBody } from "@workspace/api-zod";
 
 const router = Router();
 
-const ROLES = ["driver", "picker", "sorter", "loader", "supervisor", "security"] as const;
+const ROLES = ["driver", "picker", "sorter", "loader", "supervisor", "security", "house_keeper"] as const;
 const TODAY = () => new Date().toISOString().split("T")[0];
 
 function toApi(row: typeof staffTable.$inferSelect, isCheckedIn = false, checkInTime: string | null = null, checkInLat: number | null = null, checkInLng: number | null = null) {
@@ -105,6 +106,52 @@ router.post("/staff", async (req, res) => {
     status: "active",
   }).returning();
   return res.status(201).json(toApi(row));
+});
+
+// POST /staff/bulk  (must be before /staff/:id)
+router.post("/staff/bulk", async (req, res) => {
+  const parsed = BulkCreateStaffBody.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.message });
+  }
+
+  const errors: { row: number; message: string }[] = [];
+  let created = 0;
+
+  for (let i = 0; i < parsed.data.staff.length; i++) {
+    const s = parsed.data.staff[i];
+    try {
+      await db.insert(staffTable).values({
+        name: s.name,
+        employeeId: s.employeeId,
+        role: s.role,
+        phone: s.phone,
+        hub: s.hub,
+        joiningDate: s.joiningDate,
+        password: s.password,
+        address: s.address ?? null,
+        emergencyContact: s.emergencyContact ?? null,
+        aadhaarNumber: s.aadhaarNumber ?? null,
+        panNumber: s.panNumber ?? null,
+        licenseNumber: s.licenseNumber ?? null,
+        licenseExpiry: s.licenseExpiry ?? null,
+        shiftStart: s.shiftStart ?? null,
+        shiftEnd: s.shiftEnd ?? null,
+        status: "active",
+      });
+      created++;
+    } catch (err) {
+      const cause = err instanceof Error ? (err.cause as { code?: string; message?: string } | undefined) : undefined;
+      const text = `${err instanceof Error ? err.message : ""} ${cause?.message ?? ""}`;
+      const isDuplicate = cause?.code === "23505" || /unique|duplicate/i.test(text);
+      const message = isDuplicate
+        ? `Employee ID "${s.employeeId}" or phone already exists`
+        : "Could not import this row";
+      errors.push({ row: i + 1, message });
+    }
+  }
+
+  return res.json({ created, failed: errors.length, errors });
 });
 
 // GET /staff/:id
