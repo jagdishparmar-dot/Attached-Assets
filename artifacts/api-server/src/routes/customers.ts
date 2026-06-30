@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, customersTable } from "@workspace/db";
-import { CreateCustomerBody, GetCustomerParams } from "@workspace/api-zod";
+import { CreateCustomerBody, GetCustomerParams, BulkCreateCustomersBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -36,6 +36,35 @@ router.post("/customers", async (req, res): Promise<void> => {
 
   const [customer] = await db.insert(customersTable).values(parsed.data).returning();
   res.status(201).json(formatCustomer(customer));
+});
+
+router.post("/customers/bulk", async (req, res): Promise<void> => {
+  const parsed = BulkCreateCustomersBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const errors: { row: number; message: string }[] = [];
+  let created = 0;
+
+  for (let i = 0; i < parsed.data.customers.length; i++) {
+    const customer = parsed.data.customers[i];
+    try {
+      await db.insert(customersTable).values(customer);
+      created++;
+    } catch (err) {
+      const cause = err instanceof Error ? (err.cause as { code?: string; message?: string } | undefined) : undefined;
+      const text = `${err instanceof Error ? err.message : ""} ${cause?.message ?? ""}`;
+      const isDuplicate = cause?.code === "23505" || /unique|duplicate/i.test(text);
+      const message = isDuplicate
+        ? `Customer code "${customer.customerCode}" already exists`
+        : "Could not import this row";
+      errors.push({ row: i + 1, message });
+    }
+  }
+
+  res.json({ created, failed: errors.length, errors });
 });
 
 router.get("/customers/:id", async (req, res): Promise<void> => {

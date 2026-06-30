@@ -498,6 +498,38 @@ export const CreateCustomerResponse = zod.object({
 
 
 /**
+ * @summary Bulk create customers from an uploaded list
+ */
+export const bulkCreateCustomersBodyCustomersMax = 1000;
+
+
+
+export const BulkCreateCustomersBody = zod.object({
+  "customers": zod.array(zod.object({
+  "customerCode": zod.string(),
+  "companyName": zod.string(),
+  "address": zod.string(),
+  "area": zod.string().nullish(),
+  "city": zod.string(),
+  "contactPerson": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string().nullish(),
+  "deliveryWindow": zod.string().nullish(),
+  "specialInstructions": zod.string().nullish()
+})).min(1).max(bulkCreateCustomersBodyCustomersMax)
+})
+
+export const BulkCreateCustomersResponse = zod.object({
+  "created": zod.number(),
+  "failed": zod.number(),
+  "errors": zod.array(zod.object({
+  "row": zod.number(),
+  "message": zod.string()
+}))
+})
+
+
+/**
  * @summary Get a customer by ID
  */
 export const GetCustomerParams = zod.object({

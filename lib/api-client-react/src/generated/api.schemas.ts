@@ -246,6 +246,25 @@ export interface CustomerInput {
   specialInstructions?: string | null;
 }
 
+export interface BulkCustomerImport {
+  /**
+     * @minItems 1
+     * @maxItems 1000
+     */
+  customers: CustomerInput[];
+}
+
+export type BulkCustomerResultErrorsItem = {
+  row: number;
+  message: string;
+};
+
+export interface BulkCustomerResult {
+  created: number;
+  failed: number;
+  errors: BulkCustomerResultErrorsItem[];
+}
+
 export type DeliveryStatus = typeof DeliveryStatus[keyof typeof DeliveryStatus];
 
 
