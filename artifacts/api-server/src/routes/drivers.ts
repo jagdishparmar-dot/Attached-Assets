@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { db, driversTable } from "@workspace/db";
+import { db, driversTable, staffTable } from "@workspace/db";
 import {
   CreateDriverBody,
   UpdateDriverBody,
@@ -47,7 +47,33 @@ router.post("/drivers", async (req, res): Promise<void> => {
     return;
   }
 
-  const [driver] = await db.insert(driversTable).values(parsed.data).returning();
+  // Insert the driver and mirror it into the workforce (staff) table atomically
+  // so a driver added under Operations also shows under Workforce > Staff.
+  // Mirrored drivers can log in to the mobile app with the default password.
+  const driver = await db.transaction(async (tx) => {
+    const [d] = await tx.insert(driversTable).values(parsed.data).returning();
+    await tx
+      .insert(staffTable)
+      .values({
+        name: d.name,
+        employeeId: d.employeeId,
+        role: "driver",
+        phone: d.phone,
+        hub: d.hub,
+        joiningDate: d.joiningDate,
+        password: "cold@123",
+        address: d.address ?? null,
+        emergencyContact: d.emergencyContact ?? null,
+        aadhaarNumber: d.aadhaarNumber ?? null,
+        panNumber: d.panNumber ?? null,
+        licenseNumber: d.licenseNumber ?? null,
+        licenseExpiry: d.licenseExpiry ?? null,
+        status: d.status,
+      })
+      .onConflictDoNothing({ target: staffTable.employeeId });
+    return d;
+  });
+
   res.status(201).json({
     id: driver.id,
     name: driver.name,
@@ -114,11 +140,34 @@ router.patch("/drivers/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [driver] = await db
-    .update(driversTable)
-    .set(parsed.data)
-    .where(eq(driversTable.id, params.data.id))
-    .returning();
+  const driver = await db.transaction(async (tx) => {
+    const [d] = await tx
+      .update(driversTable)
+      .set(parsed.data)
+      .where(eq(driversTable.id, params.data.id))
+      .returning();
+
+    if (!d) return undefined;
+
+    // Keep the mirrored workforce (staff) record in sync with driver edits.
+    await tx
+      .update(staffTable)
+      .set({
+        name: d.name,
+        phone: d.phone,
+        hub: d.hub,
+        status: d.status,
+        address: d.address ?? null,
+        emergencyContact: d.emergencyContact ?? null,
+        aadhaarNumber: d.aadhaarNumber ?? null,
+        panNumber: d.panNumber ?? null,
+        licenseNumber: d.licenseNumber ?? null,
+        licenseExpiry: d.licenseExpiry ?? null,
+      })
+      .where(eq(staffTable.employeeId, d.employeeId));
+
+    return d;
+  });
 
   if (!driver) {
     res.status(404).json({ error: "Driver not found" });
