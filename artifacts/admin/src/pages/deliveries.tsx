@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useListDeliveries, DeliveryStatus } from "@workspace/api-client-react";
+import { useListDeliveries, useUpdateDelivery, DeliveryStatus } from "@workspace/api-client-react";
+import type { Delivery } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,17 +9,67 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Truck } from "lucide-react";
+import { Search, Plus, Truck, Pencil } from "lucide-react";
 import { Empty } from "@/components/ui/empty";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+
+type DeliveryRow = Delivery;
 
 export default function Deliveries() {
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<DeliveryStatus | "all">("all");
   const [search, setSearch] = useState("");
+  const [editTarget, setEditTarget] = useState<DeliveryRow | null>(null);
+  const [editForm, setEditForm] = useState({
+    priority: "normal" as any,
+    deliveryDate: "",
+    deliveryWindow: "",
+    remarks: "",
+  });
 
-  const { data: deliveries, isLoading } = useListDeliveries(
+  const { data: deliveries, isLoading, refetch } = useListDeliveries(
     statusFilter !== "all" ? { status: statusFilter } : undefined
   );
+
+  const updateDelivery = useUpdateDelivery();
+
+  const openEdit = (d: DeliveryRow) => {
+    setEditTarget(d);
+    setEditForm({
+      priority: d.priority,
+      deliveryDate: d.deliveryDate ? d.deliveryDate.split("T")[0] : "",
+      deliveryWindow: d.deliveryWindow ?? "",
+      remarks: d.remarks ?? "",
+    });
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    updateDelivery.mutate({
+      id: editTarget.id,
+      data: {
+        priority: editForm.priority,
+        deliveryDate: editForm.deliveryDate,
+        deliveryWindow: editForm.deliveryWindow,
+        remarks: editForm.remarks || null,
+      },
+    }, {
+      onSuccess: () => {
+        toast({ title: "Success", description: "Delivery updated successfully" });
+        setEditTarget(null);
+        refetch();
+      },
+      onError: () => {
+        toast({ title: "Error", description: "Failed to update delivery", variant: "destructive" });
+      },
+    });
+  };
 
   const filteredDeliveries = deliveries?.filter((d) => {
     if (!search) return true;
@@ -113,6 +164,7 @@ export default function Deliveries() {
                     <TableHead>Priority</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Driver</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -139,6 +191,15 @@ export default function Deliveries() {
                         </Badge>
                       </TableCell>
                       <TableCell>{delivery.assignedDriverName || <span className="text-muted-foreground text-xs">Unassigned</span>}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); openEdit(delivery); }}
+                        >
+                          <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -147,6 +208,47 @@ export default function Deliveries() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!editTarget} onOpenChange={(o) => !o && setEditTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Delivery {editTarget?.deliveryNumber}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Priority</Label>
+              <Select value={editForm.priority} onValueChange={(v) => setEditForm({ ...editForm, priority: v as any })}>
+                <SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Delivery Date</Label>
+                <Input type="date" required value={editForm.deliveryDate} onChange={(e) => setEditForm({ ...editForm, deliveryDate: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Delivery Window</Label>
+                <Input required value={editForm.deliveryWindow} onChange={(e) => setEditForm({ ...editForm, deliveryWindow: e.target.value })} placeholder="e.g. 08:00-12:00" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Remarks</Label>
+              <Textarea value={editForm.remarks} onChange={(e) => setEditForm({ ...editForm, remarks: e.target.value })} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditTarget(null)}>Cancel</Button>
+              <Button type="submit" disabled={updateDelivery.isPending}>
+                {updateDelivery.isPending ? "Saving…" : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

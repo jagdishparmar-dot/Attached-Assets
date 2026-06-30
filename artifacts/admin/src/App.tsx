@@ -40,13 +40,16 @@ function Router() {
         <Route path="/admin/deliveries" component={Deliveries} />
         
         <Route path="/admin/drivers/new" component={DriverNew} />
+        <Route path="/admin/drivers/:id/edit" component={DriverNew} />
         <Route path="/admin/drivers/:id" component={DriverDetail} />
         <Route path="/admin/drivers" component={Drivers} />
         
         <Route path="/admin/vehicles/new" component={VehicleNew} />
+        <Route path="/admin/vehicles/:id/edit" component={VehicleNew} />
         <Route path="/admin/vehicles" component={Vehicles} />
         
         <Route path="/admin/customers/new" component={CustomerNew} />
+        <Route path="/admin/customers/:id/edit" component={CustomerNew} />
         <Route path="/admin/customers/:id" component={CustomerDetail} />
         <Route path="/admin/customers" component={Customers} />
 

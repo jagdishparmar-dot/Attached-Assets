@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Plus, Search } from "lucide-react";
+import { Building2, Plus, Search, Pencil } from "lucide-react";
 import { Empty } from "@/components/ui/empty";
 import { BulkUploadDialog } from "@/components/BulkUploadDialog";
 
@@ -77,6 +77,7 @@ export default function Customers() {
                     <TableHead>Phone</TableHead>
                     <TableHead>City</TableHead>
                     <TableHead className="text-right">Total Deliveries</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -92,6 +93,15 @@ export default function Customers() {
                       <TableCell>{customer.phone}</TableCell>
                       <TableCell>{customer.city}</TableCell>
                       <TableCell className="text-right">{customer.totalDeliveries || 0}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/admin/customers/${customer.id}/edit`); }}
+                        >
+                          <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

@@ -1,18 +1,24 @@
-import React, { useState } from "react";
-import { useLocation } from "wouter";
-import { useCreateDriver } from "@workspace/api-client-react";
+import React, { useState, useEffect } from "react";
+import { useLocation, useParams } from "wouter";
+import { useCreateDriver, useUpdateDriver, useGetDriver, getGetDriverQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 
 export default function DriverNew() {
   const [, navigate] = useLocation();
+  const params = useParams();
+  const editId = params.id ? Number(params.id) : null;
+  const isEdit = editId !== null;
   const { toast } = useToast();
   const createDriver = useCreateDriver();
+  const updateDriver = useUpdateDriver();
+  const { data: driver } = useGetDriver(editId ?? 0, { query: { enabled: isEdit, queryKey: getGetDriverQueryKey(editId ?? 0) } });
 
   const [formData, setFormData] = useState({
     name: "",
@@ -26,13 +32,63 @@ export default function DriverNew() {
     emergencyContact: "",
     aadhaarNumber: "",
     panNumber: "",
+    status: "active" as any,
   });
+
+  useEffect(() => {
+    if (!isEdit || !driver) return;
+    setFormData({
+      name: driver.name,
+      employeeId: driver.employeeId,
+      phone: driver.phone,
+      licenseNumber: driver.licenseNumber,
+      licenseExpiry: driver.licenseExpiry ?? "",
+      hub: driver.hub,
+      joiningDate: driver.joiningDate ?? "",
+      address: driver.address ?? "",
+      emergencyContact: driver.emergencyContact ?? "",
+      aadhaarNumber: driver.aadhaarNumber ?? "",
+      panNumber: driver.panNumber ?? "",
+      status: driver.status,
+    });
+  }, [isEdit, driver]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isEdit && editId !== null) {
+      updateDriver.mutate({
+        id: editId,
+        data: {
+          name: formData.name,
+          phone: formData.phone,
+          licenseNumber: formData.licenseNumber,
+          licenseExpiry: formData.licenseExpiry || null,
+          address: formData.address || null,
+          emergencyContact: formData.emergencyContact || null,
+          hub: formData.hub,
+          status: formData.status,
+        },
+      }, {
+        onSuccess: () => {
+          toast({ title: "Success", description: "Driver updated successfully" });
+          navigate(`/admin/drivers/${editId}`);
+        },
+        onError: () => {
+          toast({ title: "Error", description: "Failed to update driver", variant: "destructive" });
+        },
+      });
+      return;
+    }
+
     createDriver.mutate({
       data: {
-        ...formData,
+        name: formData.name,
+        employeeId: formData.employeeId,
+        phone: formData.phone,
+        licenseNumber: formData.licenseNumber,
+        hub: formData.hub,
+        joiningDate: formData.joiningDate,
         licenseExpiry: formData.licenseExpiry || undefined,
         address: formData.address || undefined,
         emergencyContact: formData.emergencyContact || undefined,
@@ -50,13 +106,15 @@ export default function DriverNew() {
     });
   };
 
+  const isPending = createDriver.isPending || updateDriver.isPending;
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate("/admin/drivers")}>
+        <Button variant="outline" size="icon" onClick={() => navigate(isEdit ? `/admin/drivers/${editId}` : "/admin/drivers")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-3xl font-bold tracking-tight">Add New Driver</h2>
+        <h2 className="text-3xl font-bold tracking-tight">{isEdit ? "Edit Driver" : "Add New Driver"}</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -71,7 +129,7 @@ export default function DriverNew() {
             </div>
             <div className="space-y-2">
               <Label>Employee ID *</Label>
-              <Input required value={formData.employeeId} onChange={e => setFormData({...formData, employeeId: e.target.value})} />
+              <Input required disabled={isEdit} value={formData.employeeId} onChange={e => setFormData({...formData, employeeId: e.target.value})} />
             </div>
             <div className="space-y-2">
               <Label>Phone Number *</Label>
@@ -107,23 +165,37 @@ export default function DriverNew() {
             </div>
             <div className="space-y-2">
               <Label>Joining Date *</Label>
-              <Input type="date" required value={formData.joiningDate} onChange={e => setFormData({...formData, joiningDate: e.target.value})} />
+              <Input type="date" required disabled={isEdit} value={formData.joiningDate} onChange={e => setFormData({...formData, joiningDate: e.target.value})} />
             </div>
             <div className="space-y-2">
               <Label>Aadhaar Number</Label>
-              <Input value={formData.aadhaarNumber} onChange={e => setFormData({...formData, aadhaarNumber: e.target.value})} />
+              <Input disabled={isEdit} value={formData.aadhaarNumber} onChange={e => setFormData({...formData, aadhaarNumber: e.target.value})} />
             </div>
             <div className="space-y-2">
               <Label>PAN Number</Label>
-              <Input value={formData.panNumber} onChange={e => setFormData({...formData, panNumber: e.target.value})} />
+              <Input disabled={isEdit} value={formData.panNumber} onChange={e => setFormData({...formData, panNumber: e.target.value})} />
             </div>
+            {isEdit && (
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={formData.status} onValueChange={(v) => setFormData({...formData, status: v as any})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/drivers")}>Cancel</Button>
-          <Button type="submit" disabled={createDriver.isPending}>
-            {createDriver.isPending ? "Saving..." : "Add Driver"}
+          <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/admin/drivers/${editId}` : "/admin/drivers")}>Cancel</Button>
+          <Button type="submit" disabled={isPending}>
+            {isPending ? "Saving..." : isEdit ? "Save Changes" : "Add Driver"}
           </Button>
         </div>
       </form>

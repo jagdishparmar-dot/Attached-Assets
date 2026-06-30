@@ -210,6 +210,50 @@ export interface VehicleInput {
   fitnessExpiry?: string | null;
 }
 
+export type VehicleUpdateVehicleType = typeof VehicleUpdateVehicleType[keyof typeof VehicleUpdateVehicleType];
+
+
+export const VehicleUpdateVehicleType = {
+  refrigerated_truck: 'refrigerated_truck',
+  chilled_van: 'chilled_van',
+  ambient_truck: 'ambient_truck',
+  motorcycle: 'motorcycle',
+} as const;
+
+export type VehicleUpdateFuelType = typeof VehicleUpdateFuelType[keyof typeof VehicleUpdateFuelType];
+
+
+export const VehicleUpdateFuelType = {
+  diesel: 'diesel',
+  petrol: 'petrol',
+  cng: 'cng',
+  electric: 'electric',
+} as const;
+
+export type VehicleUpdateStatus = typeof VehicleUpdateStatus[keyof typeof VehicleUpdateStatus];
+
+
+export const VehicleUpdateStatus = {
+  available: 'available',
+  in_use: 'in_use',
+  maintenance: 'maintenance',
+  inactive: 'inactive',
+} as const;
+
+export interface VehicleUpdate {
+  vehicleNumber?: string;
+  vehicleType?: VehicleUpdateVehicleType;
+  capacity?: string;
+  fuelType?: VehicleUpdateFuelType;
+  /** @nullable */
+  gpsDeviceId?: string | null;
+  /** @nullable */
+  insuranceExpiry?: string | null;
+  /** @nullable */
+  fitnessExpiry?: string | null;
+  status?: VehicleUpdateStatus;
+}
+
 export interface Customer {
   id: number;
   customerCode: string;
@@ -238,6 +282,23 @@ export interface CustomerInput {
   city: string;
   contactPerson: string;
   phone: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  deliveryWindow?: string | null;
+  /** @nullable */
+  specialInstructions?: string | null;
+}
+
+export interface CustomerUpdate {
+  customerCode?: string;
+  companyName?: string;
+  address?: string;
+  /** @nullable */
+  area?: string | null;
+  city?: string;
+  contactPerson?: string;
+  phone?: string;
   /** @nullable */
   email?: string | null;
   /** @nullable */

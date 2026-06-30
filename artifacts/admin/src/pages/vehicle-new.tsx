@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { useLocation } from "wouter";
-import { useCreateVehicle } from "@workspace/api-client-react";
+import React, { useState, useEffect } from "react";
+import { useLocation, useParams } from "wouter";
+import { useCreateVehicle, useUpdateVehicle, useListVehicles, getListVehiclesQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,13 @@ import { ArrowLeft } from "lucide-react";
 
 export default function VehicleNew() {
   const [, navigate] = useLocation();
+  const params = useParams();
+  const editId = params.id ? Number(params.id) : null;
+  const isEdit = editId !== null;
   const { toast } = useToast();
   const createVehicle = useCreateVehicle();
+  const updateVehicle = useUpdateVehicle();
+  const { data: vehicles } = useListVehicles({ query: { enabled: isEdit, queryKey: getListVehiclesQueryKey() } });
 
   const [formData, setFormData] = useState({
     vehicleNumber: "",
@@ -22,27 +27,62 @@ export default function VehicleNew() {
     gpsDeviceId: "",
     insuranceExpiry: "",
     fitnessExpiry: "",
+    status: "available" as any,
   });
+
+  useEffect(() => {
+    if (!isEdit || !vehicles) return;
+    const v = vehicles.find((x) => x.id === editId);
+    if (!v) return;
+    setFormData({
+      vehicleNumber: v.vehicleNumber,
+      vehicleType: v.vehicleType,
+      capacity: v.capacity,
+      fuelType: v.fuelType,
+      gpsDeviceId: v.gpsDeviceId ?? "",
+      insuranceExpiry: v.insuranceExpiry ?? "",
+      fitnessExpiry: v.fitnessExpiry ?? "",
+      status: v.status,
+    });
+  }, [isEdit, vehicles, editId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createVehicle.mutate({
-      data: {
-        ...formData,
-        gpsDeviceId: formData.gpsDeviceId || undefined,
-        insuranceExpiry: formData.insuranceExpiry || undefined,
-        fitnessExpiry: formData.fitnessExpiry || undefined,
-      }
-    }, {
-      onSuccess: () => {
-        toast({ title: "Success", description: "Vehicle added successfully" });
-        navigate("/admin/vehicles");
-      },
-      onError: () => {
-        toast({ title: "Error", description: "Failed to add vehicle", variant: "destructive" });
-      }
-    });
+    const blank = isEdit ? null : undefined;
+    const payload = {
+      vehicleNumber: formData.vehicleNumber,
+      vehicleType: formData.vehicleType,
+      capacity: formData.capacity,
+      fuelType: formData.fuelType,
+      gpsDeviceId: formData.gpsDeviceId || blank,
+      insuranceExpiry: formData.insuranceExpiry || blank,
+      fitnessExpiry: formData.fitnessExpiry || blank,
+    };
+
+    if (isEdit && editId !== null) {
+      updateVehicle.mutate({ id: editId, data: { ...payload, status: formData.status } }, {
+        onSuccess: () => {
+          toast({ title: "Success", description: "Vehicle updated successfully" });
+          navigate("/admin/vehicles");
+        },
+        onError: () => {
+          toast({ title: "Error", description: "Failed to update vehicle", variant: "destructive" });
+        },
+      });
+    } else {
+      createVehicle.mutate({ data: payload }, {
+        onSuccess: () => {
+          toast({ title: "Success", description: "Vehicle added successfully" });
+          navigate("/admin/vehicles");
+        },
+        onError: () => {
+          toast({ title: "Error", description: "Failed to add vehicle", variant: "destructive" });
+        },
+      });
+    }
   };
+
+  const isPending = createVehicle.isPending || updateVehicle.isPending;
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -50,7 +90,7 @@ export default function VehicleNew() {
         <Button variant="outline" size="icon" onClick={() => navigate("/admin/vehicles")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-3xl font-bold tracking-tight">Add New Vehicle</h2>
+        <h2 className="text-3xl font-bold tracking-tight">{isEdit ? "Edit Vehicle" : "Add New Vehicle"}</h2>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -109,12 +149,28 @@ export default function VehicleNew() {
                 <Label>Fitness Expiry</Label>
                 <Input type="date" value={formData.fitnessExpiry} onChange={e => setFormData({...formData, fitnessExpiry: e.target.value})} />
               </div>
+              {isEdit && (
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={formData.status} onValueChange={(v) => setFormData({...formData, status: v as any})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="available">Available</SelectItem>
+                      <SelectItem value="in_use">In Use</SelectItem>
+                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             
             <div className="flex justify-end gap-4 pt-4 mt-4 border-t">
               <Button type="button" variant="outline" onClick={() => navigate("/admin/vehicles")}>Cancel</Button>
-              <Button type="submit" disabled={createVehicle.isPending}>
-                {createVehicle.isPending ? "Saving..." : "Add Vehicle"}
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Saving..." : isEdit ? "Save Changes" : "Add Vehicle"}
               </Button>
             </div>
           </CardContent>

@@ -6,7 +6,7 @@ import {
   useDeleteStaffMember,
 } from "@workspace/api-client-react";
 import type { StaffInput, StaffMember } from "@workspace/api-client-react";
-import { Users, Plus, Search, UserCheck, Clock, Trash2 } from "lucide-react";
+import { Users, Plus, Search, UserCheck, Clock, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +102,9 @@ export default function StaffPage() {
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
+  const [editTarget, setEditTarget] = useState<StaffMember | null>(null);
   const [form, setForm] = useState<StaffFormState>(EMPTY_FORM);
+  const [editForm, setEditForm] = useState<StaffFormState>(EMPTY_FORM);
 
   const { data: staffList = [], isLoading, refetch } = useListStaff({
     role: roleFilter === "all" ? undefined : roleFilter,
@@ -123,6 +125,49 @@ export default function StaffPage() {
   const toggleMutation = useUpdateStaffMember({
     mutation: { onSuccess: () => refetch() },
   });
+
+  const editMutation = useUpdateStaffMember({
+    mutation: {
+      onSuccess: () => {
+        refetch();
+        setEditTarget(null);
+        toast({ title: "Staff member updated" });
+      },
+      onError: () => toast({ title: "Error", description: "Failed to update staff member.", variant: "destructive" }),
+    },
+  });
+
+  const openEdit = (s: StaffMember) => {
+    setEditTarget(s);
+    setEditForm({
+      name: s.name,
+      employeeId: s.employeeId,
+      role: s.role as Role,
+      phone: s.phone,
+      hub: s.hub,
+      joiningDate: s.joiningDate ?? "",
+      password: "",
+      shiftStart: s.shiftStart ?? "",
+      shiftEnd: s.shiftEnd ?? "",
+      licenseNumber: s.licenseNumber ?? "",
+    });
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    editMutation.mutate({
+      id: editTarget.id,
+      data: {
+        name: editForm.name,
+        phone: editForm.phone,
+        hub: editForm.hub,
+        shiftStart: editForm.shiftStart || null,
+        shiftEnd: editForm.shiftEnd || null,
+        ...(editForm.password ? { password: editForm.password } : {}),
+      } as any,
+    });
+  };
 
   const deleteMutation = useDeleteStaffMember({
     mutation: {
@@ -297,14 +342,24 @@ export default function StaffPage() {
                     </button>
                   </td>
                   <td className="px-5 py-3.5 text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => setDeleteTarget(s)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => openEdit(s)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeleteTarget(s)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -398,6 +453,77 @@ export default function StaffPage() {
               <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
               <Button type="submit" disabled={createMutation.isPending}>
                 {createMutation.isPending ? "Adding…" : "Add Staff Member"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Staff Dialog */}
+      <Dialog open={!!editTarget} onOpenChange={(o) => !o && setEditTarget(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Staff Member</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Full Name *</Label>
+                <Input required value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Employee ID</Label>
+                <Input disabled value={editForm.employeeId} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Role</Label>
+                <Input disabled value={ROLE_CONFIG[editForm.role as Role]?.label ?? editForm.role} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Hub *</Label>
+                <Select value={editForm.hub} onValueChange={(v) => setEditForm({ ...editForm, hub: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select hub" /></SelectTrigger>
+                  <SelectContent>
+                    {HUBS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Phone *</Label>
+                <Input required value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Joining Date</Label>
+                <Input disabled type="date" value={editForm.joiningDate} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Shift Start</Label>
+                <Input type="time" value={editForm.shiftStart} onChange={(e) => setEditForm({ ...editForm, shiftStart: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Shift End</Label>
+                <Input type="time" value={editForm.shiftEnd} onChange={(e) => setEditForm({ ...editForm, shiftEnd: e.target.value })} />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Reset Password</Label>
+              <Input type="password" placeholder="Leave blank to keep current" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditTarget(null)}>Cancel</Button>
+              <Button type="submit" disabled={editMutation.isPending}>
+                {editMutation.isPending ? "Saving…" : "Save Changes"}
               </Button>
             </DialogFooter>
           </form>

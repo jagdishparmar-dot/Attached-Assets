@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Car, Plus } from "lucide-react";
+import { Car, Plus, Pencil } from "lucide-react";
 import { Empty } from "@/components/ui/empty";
 
 export default function Vehicles() {
@@ -70,6 +70,7 @@ export default function Vehicles() {
                     <TableHead>Status</TableHead>
                     <TableHead>Insurance</TableHead>
                     <TableHead>Fitness</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -92,6 +93,11 @@ export default function Vehicles() {
                             {new Date(vehicle.fitnessExpiry).toLocaleDateString()}
                           </span>
                         ) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/vehicles/${vehicle.id}/edit`)}>
+                          <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

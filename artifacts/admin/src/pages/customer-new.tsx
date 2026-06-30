@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { useLocation } from "wouter";
-import { useCreateCustomer } from "@workspace/api-client-react";
+import React, { useState, useEffect } from "react";
+import { useLocation, useParams } from "wouter";
+import { useCreateCustomer, useUpdateCustomer, useGetCustomer, getGetCustomerQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,13 @@ import { BulkUploadDialog } from "@/components/BulkUploadDialog";
 
 export default function CustomerNew() {
   const [, navigate] = useLocation();
+  const params = useParams();
+  const editId = params.id ? Number(params.id) : null;
+  const isEdit = editId !== null;
   const { toast } = useToast();
   const createCustomer = useCreateCustomer();
+  const updateCustomer = useUpdateCustomer();
+  const { data: customer } = useGetCustomer(editId ?? 0, { query: { enabled: isEdit, queryKey: getGetCustomerQueryKey(editId ?? 0) } });
 
   const [formData, setFormData] = useState({
     customerCode: "",
@@ -28,17 +33,52 @@ export default function CustomerNew() {
     specialInstructions: "",
   });
 
+  useEffect(() => {
+    if (!isEdit || !customer) return;
+    setFormData({
+      customerCode: customer.customerCode,
+      companyName: customer.companyName,
+      address: customer.address,
+      area: customer.area ?? "",
+      city: customer.city ?? "",
+      contactPerson: customer.contactPerson,
+      phone: customer.phone,
+      email: customer.email ?? "",
+      deliveryWindow: customer.deliveryWindow ?? "",
+      specialInstructions: customer.specialInstructions ?? "",
+    });
+  }, [isEdit, customer]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createCustomer.mutate({
-      data: {
-        ...formData,
-        area: formData.area || undefined,
-        email: formData.email || undefined,
-        deliveryWindow: formData.deliveryWindow || undefined,
-        specialInstructions: formData.specialInstructions || undefined,
-      }
-    }, {
+    const blank = isEdit ? null : undefined;
+    const payload = {
+      customerCode: formData.customerCode,
+      companyName: formData.companyName,
+      address: formData.address,
+      city: formData.city,
+      contactPerson: formData.contactPerson,
+      phone: formData.phone,
+      area: formData.area || blank,
+      email: formData.email || blank,
+      deliveryWindow: formData.deliveryWindow || blank,
+      specialInstructions: formData.specialInstructions || blank,
+    };
+
+    if (isEdit && editId !== null) {
+      updateCustomer.mutate({ id: editId, data: payload }, {
+        onSuccess: () => {
+          toast({ title: "Success", description: "Customer updated successfully" });
+          navigate(`/admin/customers/${editId}`);
+        },
+        onError: () => {
+          toast({ title: "Error", description: "Failed to update customer", variant: "destructive" });
+        },
+      });
+      return;
+    }
+
+    createCustomer.mutate({ data: payload }, {
       onSuccess: (data) => {
         toast({ title: "Success", description: "Customer added successfully" });
         navigate(`/admin/customers/${data.id}`);
@@ -49,16 +89,20 @@ export default function CustomerNew() {
     });
   };
 
+  const isPending = createCustomer.isPending || updateCustomer.isPending;
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate("/admin/customers")}>
+        <Button variant="outline" size="icon" onClick={() => navigate(isEdit ? `/admin/customers/${editId}` : "/admin/customers")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-3xl font-bold tracking-tight">Add New Customer</h2>
-        <div className="ml-auto">
-          <BulkUploadDialog onImported={() => navigate("/admin/customers")} />
-        </div>
+        <h2 className="text-3xl font-bold tracking-tight">{isEdit ? "Edit Customer" : "Add New Customer"}</h2>
+        {!isEdit && (
+          <div className="ml-auto">
+            <BulkUploadDialog onImported={() => navigate("/admin/customers")} />
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -119,9 +163,9 @@ export default function CustomerNew() {
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/customers")}>Cancel</Button>
-          <Button type="submit" disabled={createCustomer.isPending}>
-            {createCustomer.isPending ? "Saving..." : "Add Customer"}
+          <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/admin/customers/${editId}` : "/admin/customers")}>Cancel</Button>
+          <Button type="submit" disabled={isPending}>
+            {isPending ? "Saving..." : isEdit ? "Save Changes" : "Add Customer"}
           </Button>
         </div>
       </form>

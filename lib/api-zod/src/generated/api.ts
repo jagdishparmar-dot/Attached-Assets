@@ -446,6 +446,41 @@ export const CreateVehicleResponse = zod.object({
 
 
 /**
+ * @summary Update a vehicle
+ */
+export const UpdateVehicleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateVehicleBody = zod.object({
+  "vehicleNumber": zod.string().optional(),
+  "vehicleType": zod.enum(['refrigerated_truck', 'chilled_van', 'ambient_truck', 'motorcycle']).optional(),
+  "capacity": zod.string().optional(),
+  "fuelType": zod.enum(['diesel', 'petrol', 'cng', 'electric']).optional(),
+  "gpsDeviceId": zod.string().nullish(),
+  "insuranceExpiry": zod.string().nullish(),
+  "fitnessExpiry": zod.string().nullish(),
+  "status": zod.enum(['available', 'in_use', 'maintenance', 'inactive']).optional()
+})
+
+export const UpdateVehicleResponse = zod.object({
+  "id": zod.number(),
+  "vehicleNumber": zod.string(),
+  "vehicleType": zod.enum(['refrigerated_truck', 'chilled_van', 'ambient_truck', 'motorcycle']),
+  "capacity": zod.string(),
+  "fuelType": zod.enum(['diesel', 'petrol', 'cng', 'electric']),
+  "gpsDeviceId": zod.string().nullish(),
+  "insuranceExpiry": zod.string().nullish(),
+  "fitnessExpiry": zod.string().nullish(),
+  "rcExpiry": zod.string().nullish(),
+  "pucExpiry": zod.string().nullish(),
+  "status": zod.enum(['available', 'in_use', 'maintenance', 'inactive']),
+  "currentDriverId": zod.number().nullish(),
+  "currentDriverName": zod.string().nullish()
+})
+
+
+/**
  * @summary List all customers
  */
 export const ListCustomersResponseItem = zod.object({
@@ -537,6 +572,42 @@ export const GetCustomerParams = zod.object({
 })
 
 export const GetCustomerResponse = zod.object({
+  "id": zod.number(),
+  "customerCode": zod.string(),
+  "companyName": zod.string(),
+  "address": zod.string(),
+  "area": zod.string().nullish(),
+  "city": zod.string().optional(),
+  "contactPerson": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string().nullish(),
+  "deliveryWindow": zod.string().nullish(),
+  "specialInstructions": zod.string().nullish(),
+  "totalDeliveries": zod.number().optional()
+})
+
+
+/**
+ * @summary Update a customer
+ */
+export const UpdateCustomerParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateCustomerBody = zod.object({
+  "customerCode": zod.string().optional(),
+  "companyName": zod.string().optional(),
+  "address": zod.string().optional(),
+  "area": zod.string().nullish(),
+  "city": zod.string().optional(),
+  "contactPerson": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "email": zod.string().nullish(),
+  "deliveryWindow": zod.string().nullish(),
+  "specialInstructions": zod.string().nullish()
+})
+
+export const UpdateCustomerResponse = zod.object({
   "id": zod.number(),
   "customerCode": zod.string(),
   "companyName": zod.string(),

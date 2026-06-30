@@ -294,6 +294,33 @@ paths:
               schema:
                 $ref: "#/components/schemas/Vehicle"
 
+  /vehicles/{id}:
+    patch:
+      operationId: updateVehicle
+      tags: [vehicles]
+      summary: Update a vehicle
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleUpdate"
+      responses:
+        "200":
+          description: Updated vehicle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+        "404":
+          description: Not found
+
   /customers:
     get:
       operationId: listCustomers
@@ -363,6 +390,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Customer"
+    patch:
+      operationId: updateCustomer
+      tags: [customers]
+      summary: Update a customer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerUpdate"
+      responses:
+        "200":
+          description: Updated customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+        "404":
+          description: Not found
 
   # ── Staff ─────────────────────────────────────────────────────
   /staff/login:
@@ -910,6 +962,29 @@ components:
         fitnessExpiry:
           type: ["string", "null"]
 
+    VehicleUpdate:
+      type: object
+      properties:
+        vehicleNumber:
+          type: string
+        vehicleType:
+          type: string
+          enum: [refrigerated_truck, chilled_van, ambient_truck, motorcycle]
+        capacity:
+          type: string
+        fuelType:
+          type: string
+          enum: [diesel, petrol, cng, electric]
+        gpsDeviceId:
+          type: ["string", "null"]
+        insuranceExpiry:
+          type: ["string", "null"]
+        fitnessExpiry:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [available, in_use, maintenance, inactive]
+
     Customer:
       type: object
       required:
@@ -954,6 +1029,30 @@ components:
         - city
         - contactPerson
         - phone
+      properties:
+        customerCode:
+          type: string
+        companyName:
+          type: string
+        address:
+          type: string
+        area:
+          type: ["string", "null"]
+        city:
+          type: string
+        contactPerson:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        deliveryWindow:
+          type: ["string", "null"]
+        specialInstructions:
+          type: ["string", "null"]
+
+    CustomerUpdate:
+      type: object
       properties:
         customerCode:
           type: string

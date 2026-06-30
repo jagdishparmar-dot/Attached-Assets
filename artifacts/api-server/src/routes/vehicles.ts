@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, vehiclesTable, driversTable } from "@workspace/db";
-import { CreateVehicleBody } from "@workspace/api-zod";
+import { CreateVehicleBody, UpdateVehicleBody, UpdateVehicleParams } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -40,6 +40,37 @@ router.post("/vehicles", async (req, res): Promise<void> => {
 
   const [vehicle] = await db.insert(vehiclesTable).values(parsed.data).returning();
   res.status(201).json(formatVehicle(vehicle));
+});
+
+router.patch("/vehicles/:id", async (req, res): Promise<void> => {
+  const params = UpdateVehicleParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  const parsed = UpdateVehicleBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [vehicle] = await db
+    .update(vehiclesTable)
+    .set(parsed.data)
+    .where(eq(vehiclesTable.id, params.data.id))
+    .returning();
+
+  if (!vehicle) {
+    res.status(404).json({ error: "Vehicle not found" });
+    return;
+  }
+
+  const driverName = vehicle.currentDriverId
+    ? (await db.select().from(driversTable).where(eq(driversTable.id, vehicle.currentDriverId)))[0]?.name ?? null
+    : null;
+
+  res.json(formatVehicle(vehicle, driverName));
 });
 
 export default router;

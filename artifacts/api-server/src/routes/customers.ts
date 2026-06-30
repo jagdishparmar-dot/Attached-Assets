@@ -1,7 +1,13 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, customersTable } from "@workspace/db";
-import { CreateCustomerBody, GetCustomerParams, BulkCreateCustomersBody } from "@workspace/api-zod";
+import {
+  CreateCustomerBody,
+  GetCustomerParams,
+  BulkCreateCustomersBody,
+  UpdateCustomerBody,
+  UpdateCustomerParams,
+} from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -81,6 +87,43 @@ router.get("/customers/:id", async (req, res): Promise<void> => {
   }
 
   res.json(formatCustomer(customer));
+});
+
+router.patch("/customers/:id", async (req, res): Promise<void> => {
+  const params = UpdateCustomerParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: "Invalid ID" });
+    return;
+  }
+
+  const parsed = UpdateCustomerBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  try {
+    const [customer] = await db
+      .update(customersTable)
+      .set(parsed.data)
+      .where(eq(customersTable.id, params.data.id))
+      .returning();
+
+    if (!customer) {
+      res.status(404).json({ error: "Customer not found" });
+      return;
+    }
+
+    res.json(formatCustomer(customer));
+  } catch (err) {
+    const cause = err instanceof Error ? (err.cause as { code?: string; message?: string } | undefined) : undefined;
+    const text = `${err instanceof Error ? err.message : ""} ${cause?.message ?? ""}`;
+    if (cause?.code === "23505" || /unique|duplicate/i.test(text)) {
+      res.status(409).json({ error: `Customer code "${parsed.data.customerCode ?? ""}" already exists` });
+      return;
+    }
+    throw err;
+  }
 });
 
 export default router;

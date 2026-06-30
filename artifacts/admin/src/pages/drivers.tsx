@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, Pencil } from "lucide-react";
 import { Empty } from "@/components/ui/empty";
 
 export default function Drivers() {
@@ -64,6 +64,7 @@ export default function Drivers() {
                     <TableHead>Hub</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Deliveries Today</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -83,6 +84,15 @@ export default function Drivers() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">{driver.deliveriesToday || 0}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/admin/drivers/${driver.id}/edit`); }}
+                        >
+                          <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
