@@ -15,6 +15,10 @@ Delivery Management System for Coldverse Supply Chain Pvt. Ltd. — manages driv
 
 New builds upload straight to the Play **internal testing** track — no manual `.aab` download/upload.
 
+**Backend URL (required for installed builds):** the mobile app reads its API/auth host from `EXPO_PUBLIC_DOMAIN` (`AuthContext.getApiBase`). This must be set as a Plain-text env var in the EAS **production** environment, pointing to the published Replit deployment domain (NOT a `*.replit.dev` dev domain). Currently `CompassdeliveryOps.replit.app`. Without it, release builds have no backend and cannot log in. Set/inspect via:
+- `EAS_NO_VCS=1 ./node_modules/.bin/eas env:list production`
+- `EAS_NO_VCS=1 ./node_modules/.bin/eas env:create production --name EXPO_PUBLIC_DOMAIN --value "<deploy-domain>" --visibility plaintext --type string --non-interactive`
+
 One-time setup (manual, done in Google Play Console + EAS):
 1. In Google Play Console → Setup → API access, create/link a **service account** and grant it the *Release manager* (or *Release to testing tracks*) permission. Download its **JSON key**.
 2. Place the key at `artifacts/mobile/google-play-service-account.json` (gitignored — never commit it). Locally that is enough; `eas.json` references it via `submit.production.android.serviceAccountKeyPath`.
