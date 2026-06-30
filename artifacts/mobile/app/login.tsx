@@ -16,13 +16,21 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAuth } from "@/context/AuthContext";
+import { getApiBase, useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  misconfigured: "App is not configured — contact your admin.",
+  network: "Can't reach the server. Check your connection and try again.",
+  invalid_credentials: "Invalid Mobile Number or password.",
+};
 
 export default function LoginScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { login } = useAuth();
+
+  const isMisconfigured = getApiBase() === "";
 
   const [phone, setPhone] = useState("9876543210");
   const [password, setPassword] = useState("cold@123");
@@ -31,6 +39,10 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
+    if (isMisconfigured) {
+      setError(ERROR_MESSAGES.misconfigured);
+      return;
+    }
     if (!phone.trim() || !password.trim()) {
       setError("Please enter your Mobile Number and password");
       return;
@@ -39,13 +51,13 @@ export default function LoginScreen() {
     setLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const success = await login(phone.trim(), password);
-    if (success) {
+    const result = await login(phone.trim(), password);
+    if (result.ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace("/(tabs)");
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setError("Invalid Employee ID or password");
+      setError(ERROR_MESSAGES[result.errorType] ?? "Something went wrong. Please try again.");
       setLoading(false);
     }
   };
@@ -75,6 +87,15 @@ export default function LoginScreen() {
             </View>
             <Text style={styles.appLabel}>Staff Portal</Text>
           </View>
+
+          {isMisconfigured && (
+            <View style={styles.misconfigBanner}>
+              <MaterialIcons name="warning" size={18} color="#92400E" />
+              <Text style={styles.misconfigText}>
+                App is not configured. Contact your admin before logging in.
+              </Text>
+            </View>
+          )}
 
           <View style={[styles.card, { backgroundColor: "#FFFFFF" }]}>
             <Text style={[styles.cardTitle, { color: "#0A1628" }]}>Staff Login</Text>
@@ -248,6 +269,24 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   hintText: { fontSize: 12, fontFamily: "Inter_400Regular", flex: 1 },
+  misconfigBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: "#FEF3C7",
+    borderWidth: 1,
+    borderColor: "#F59E0B",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+  },
+  misconfigText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    color: "#92400E",
+    lineHeight: 18,
+  },
   footer: {
     textAlign: "center",
     color: "#4A6585",

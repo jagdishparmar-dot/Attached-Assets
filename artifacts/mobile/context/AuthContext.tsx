@@ -24,12 +24,16 @@ export interface StaffMember {
   checkInLng: number | null;
 }
 
+export type LoginResult =
+  | { ok: true }
+  | { ok: false; errorType: "misconfigured" | "network" | "invalid_credentials" };
+
 interface AuthContextType {
   staff: StaffMember | null;
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (phone: string, password: string) => Promise<boolean>;
+  login: (phone: string, password: string) => Promise<LoginResult>;
   logout: () => Promise<void>;
   refreshStaff: (updated: Partial<StaffMember>) => void;
 }
@@ -69,22 +73,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = async (phone: string, password: string): Promise<boolean> => {
+  const login = async (phone: string, password: string): Promise<LoginResult> => {
+    const base = getApiBase();
+    if (!base) {
+      return { ok: false, errorType: "misconfigured" };
+    }
     try {
-      const base = getApiBase();
       const resp = await fetch(`${base}/api/staff/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, password }),
       });
-      if (!resp.ok) return false;
+      if (!resp.ok) {
+        const isAuthFailure = resp.status === 401 || resp.status === 403;
+        return { ok: false, errorType: isAuthFailure ? "invalid_credentials" : "network" };
+      }
       const data = await resp.json() as { staff: StaffMember; token: string };
       await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(data));
       setStaff(data.staff);
       setToken(data.token);
-      return true;
+      return { ok: true };
     } catch {
-      return false;
+      return { ok: false, errorType: "network" };
     }
   };
 
