@@ -18,7 +18,7 @@ New builds upload straight to the Play **internal testing** track — no manual 
 One-time setup (manual, done in Google Play Console + EAS):
 1. In Google Play Console → Setup → API access, create/link a **service account** and grant it the *Release manager* (or *Release to testing tracks*) permission. Download its **JSON key**.
 2. Place the key at `artifacts/mobile/google-play-service-account.json` (gitignored — never commit it). Locally that is enough; `eas.json` references it via `submit.production.android.serviceAccountKeyPath`.
-3. The app must already exist in Play Console with package `com.coldverse.app` and have one build uploaded by hand for the very first release (Google requires the first `.aab` to be uploaded manually).
+3. The app must already exist in Play Console with package `app.coldverse.in` and have one build uploaded by hand for the very first release (Google requires the first `.aab` to be uploaded manually).
 
 Cut a new release (from `artifacts/mobile/`, always with `EAS_NO_VCS=1`):
 - Build + auto-submit in one step:
