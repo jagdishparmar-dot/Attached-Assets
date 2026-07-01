@@ -37,6 +37,10 @@ yarn-error.*
 # Google Play service account key (EAS Submit) — never commit
 google-play-service-account.json
 
+# Release keystore and local credentials — never commit
+coldverse-release-key.p12
+credentials.json
+
 # typescript
 *.tsbuildinfo
 .vercel
