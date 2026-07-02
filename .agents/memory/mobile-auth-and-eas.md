@@ -17,6 +17,7 @@ Gate routes with `<Stack.Protected guard={isAuthenticated}>` (tabs) and `<Stack.
 ## Native tabs / liquid glass = Android crash vector under New Architecture
 `expo-router/unstable-native-tabs` (`NativeTabs`) + `expo-glass-effect` `isLiquidGlassAvailable()` should drive the tab layout only on iOS.
 - **How to apply:** `if (Platform.OS === "ios") { try { useNativeTabs = isLiquidGlassAvailable() } catch {} }`; Android always uses the classic JS `Tabs`. `newArchEnabled: true` raises native-instability risk from these iOS-oriented modules.
+- **Confirmed on device:** gating native tabs to iOS + declarative `Stack.Protected` was verified on a real Android release build — cold start lands on login and Profile no longer crashes. The web e2e + typecheck alone could NOT reproduce the native crash, so a device smoke test is the only real confirmation for this class of fix.
 
 ## Alert.alert & expo-haptics are broken on react-native-web (the canvas web preview)
 `Alert.alert` is a silent no-op on react-native-web and `expo-haptics` can throw — so any button whose action lives inside `Alert.alert` (e.g. a logout confirm) appears "not working" when tested in the web preview, even though it works on a real device.
