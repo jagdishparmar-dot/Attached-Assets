@@ -120,6 +120,10 @@ export default function AttendanceScreen() {
       return { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy ?? 0 };
     } catch {
       setGpsStatus("denied");
+      Alert.alert(
+        "GPS Error",
+        "Could not get your location. Please turn on GPS/Location in your phone settings and try again."
+      );
       return null;
     }
   };

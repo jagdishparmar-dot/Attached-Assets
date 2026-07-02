@@ -46,3 +46,4 @@ credentials.json
 .vercel
 
 .env
+*.tar.gz
