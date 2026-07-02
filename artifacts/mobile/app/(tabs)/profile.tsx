@@ -1,6 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { router } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
@@ -129,11 +128,8 @@ export default function ProfileScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : 0;
 
-  React.useEffect(() => {
-    if (!isLoading && !staff) {
-      router.replace("/login");
-    }
-  }, [isLoading, staff]);
+  // Redirect to /login is handled declaratively by <Stack.Protected> in
+  // app/_layout.tsx when the session is cleared; no imperative redirect here.
 
   const handleLogout = async () => {
     safeHaptic();

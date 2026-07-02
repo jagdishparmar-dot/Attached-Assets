@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router } from "expo-router";
 import { Platform } from "react-native";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
@@ -114,10 +113,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem(SESSION_KEY);
+    // Clear storage first, then auth state. Navigation is handled declaratively
+    // by <Stack.Protected guard={isAuthenticated}> in app/_layout.tsx — issuing
+    // an imperative router.replace here races that guard and can be dropped
+    // (the /login route isn't mounted until isAuthenticated flips), which made
+    // the logout button appear to do nothing on device.
+    try {
+      await AsyncStorage.removeItem(SESSION_KEY);
+    } catch {
+      // Even if clearing storage fails, still drop the in-memory session so the
+      // guard redirects to login; the stale entry is re-validated on next load.
+    }
     setStaff(null);
     setToken(null);
-    router.replace("/login");
   };
 
   const refreshStaff = (updated: Partial<StaffMember>) => {

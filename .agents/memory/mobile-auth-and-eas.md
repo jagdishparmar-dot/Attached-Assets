@@ -23,6 +23,16 @@ Gate routes with `<Stack.Protected guard={isAuthenticated}>` (tabs) and `<Stack.
 - **How to apply:** use cross-platform helpers: web → `globalThis.confirm` / `globalThis.alert` (default-deny when unavailable), native → `Alert.alert` (wrap the confirm in a Promise, and resolve `false` in `onDismiss`). Guard haptics to native only + `.catch(()=>{})`.
 - **Why:** the mobile app is exercised both on a device and in the web preview; button handlers must not depend on native-only APIs to give feedback.
 
+## Stack.Protected owns redirects — no imperative router.replace on login/logout
+With `<Stack.Protected guard={isAuthenticated}>`, do NOT also call `router.replace("/login")` in `logout()` or `router.replace` in a screen `useEffect` when the session clears.
+- **Why:** at the moment you clear state, the target route is still guarded-out (not yet mounted), so the imperative REPLACE races the guard and can be dropped or throw a "not handled by any navigator" error — caught by the ErrorBoundary it makes the logout button look dead. The guard already redirects declaratively once `isAuthenticated` flips.
+- **How to apply:** `logout()` should only clear AsyncStorage + set staff/token null. Remove competing redirect effects. Same principle applies to login (guard shows tabs on flip).
+
+## Play Store upload key: service account JSON, NOT the app-signing SHA fingerprint
+`google-play-service-account.json` / `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` must be the full service-account key file (`{ "type": "service_account", "private_key": ..., "client_email": ... }`).
+- **Why:** users commonly paste the colon-separated SHA-1/SHA-256 fingerprint from Play Console's App-signing page instead — that is not valid JSON and is not used for uploads. Validate with `node -e "require('./google-play-service-account.json').type"` before submitting.
+- **Manual fallback:** if no key, download the finished `.aab` from the EAS build page (`https://expo.dev/accounts/<acct>/projects/coldverse/builds/<id>`) and upload it to the Play internal track by hand.
+
 ## Validate persisted session on load
 `checkSession()` should verify the stored session shape (`staff.id` number, `staff.role` present, non-empty string `token`) and `AsyncStorage.removeItem` on malformed/parse failure.
 - **Why:** a stale session from an older build with a different shape can wedge the app into a broken tab state instead of falling back to login.
