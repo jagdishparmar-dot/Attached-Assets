@@ -30,7 +30,9 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { login } = useAuth();
 
-  const isMisconfigured = getApiBase() === "";
+  // On web (workspace preview) relative URLs work, so "" is fine. Only a native
+  // release build with no EXPO_PUBLIC_DOMAIN is genuinely misconfigured.
+  const isMisconfigured = Platform.OS !== "web" && getApiBase() === "";
 
   const [phone, setPhone] = useState("9876543210");
   const [password, setPassword] = useState("cold@123");
