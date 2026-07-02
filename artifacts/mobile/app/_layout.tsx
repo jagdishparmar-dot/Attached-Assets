@@ -6,7 +6,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Redirect, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -28,13 +28,16 @@ function RootLayoutNav() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="login" />
-      <Stack.Screen
-        name="delivery/[id]"
-        options={{ presentation: "card", headerShown: false }}
-      />
-      {!isAuthenticated && <Redirect href="/login" />}
+      <Stack.Protected guard={isAuthenticated}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="delivery/[id]"
+          options={{ presentation: "card", headerShown: false }}
+        />
+      </Stack.Protected>
+      <Stack.Protected guard={!isAuthenticated}>
+        <Stack.Screen name="login" />
+      </Stack.Protected>
     </Stack>
   );
 }

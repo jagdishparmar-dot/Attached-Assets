@@ -1,1 +1,2 @@
 - [Staff/driver dual-table linkage](staff-driver-dual-table.md) — drivers live in staffTable (mobile auth) + driversTable (delivery assignment), linked by employeeId; mirror on every driver-staff mutation, return driverId at login.
+- [Mobile auth gating & API base](mobile-auth-and-eas.md) — web getApiBase() "" is valid (misconfigured only on native); use Stack.Protected not Redirect child; iOS-gate native tabs/liquid-glass; validate stored session shape.

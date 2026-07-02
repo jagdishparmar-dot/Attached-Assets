@@ -64,11 +64,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const raw = await AsyncStorage.getItem(SESSION_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as { staff: StaffMember; token: string };
-        setStaff(parsed.staff);
-        setToken(parsed.token);
+        // Guard against stale/malformed sessions from older builds: a session
+        // missing core fields would wedge the app into a broken tab state.
+        if (
+          parsed?.staff &&
+          typeof parsed.staff.id === "number" &&
+          parsed.staff.role &&
+          typeof parsed.token === "string" &&
+          parsed.token.length > 0
+        ) {
+          setStaff(parsed.staff);
+          setToken(parsed.token);
+        } else {
+          await AsyncStorage.removeItem(SESSION_KEY);
+        }
       }
     } catch {
-      // ignore
+      await AsyncStorage.removeItem(SESSION_KEY);
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (phone: string, password: string): Promise<LoginResult> => {
     const base = getApiBase();
-    if (!base) {
+    // Web uses relative URLs (empty base) via the shared proxy; only a native
+    // build with no EXPO_PUBLIC_DOMAIN is genuinely misconfigured.
+    if (Platform.OS !== "web" && !base) {
       return { ok: false, errorType: "misconfigured" };
     }
     try {

@@ -153,7 +153,15 @@ export default function TabLayout() {
     }
   }, [isDriver, isLoading, staff, pathname]);
 
-  if (isLiquidGlassAvailable()) {
+  let useNativeTabs = false;
+  if (Platform.OS === "ios") {
+    try {
+      useNativeTabs = isLiquidGlassAvailable();
+    } catch {
+      useNativeTabs = false;
+    }
+  }
+  if (useNativeTabs) {
     return <NativeTabLayout isDriver={isDriver} />;
   }
   return <ClassicTabLayout isDriver={isDriver} />;
