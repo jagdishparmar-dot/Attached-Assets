@@ -11,3 +11,9 @@ id = "ZeZoaasX9tAy5K8Zf_5ZH"
 uri = "file://artifacts/mobile/coldverse-release-key.tar.gz"
 type = "unspecified"
 title = "coldverse-release-key.jks (tar.gz archive)"
+
+[[outputs]]
+id = "wItbsck7v-lJKhaAwb1U6"
+uri = "file://exports/coldverse-dms.tar.gz"
+type = "unspecified"
+title = "Coldverse DMS — full project source"
