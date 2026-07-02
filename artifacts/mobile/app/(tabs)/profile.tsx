@@ -83,6 +83,44 @@ function MenuItem({ label, icon, color, onPress }: MenuItemProps) {
   );
 }
 
+// Alert.alert and expo-haptics are no-ops (or throw) on react-native-web, which
+// silently broke the logout dialog + menu buttons in the web preview. These
+// helpers fall back to the DOM confirm/alert on web and stay native elsewhere.
+function safeHaptic() {
+  if (Platform.OS === "web") return;
+  try {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+  } catch {
+    // haptics unavailable on this device — ignore
+  }
+}
+
+function confirmAsync(title: string, message: string, confirmLabel: string): Promise<boolean> {
+  if (Platform.OS === "web") {
+    const fn = (globalThis as { confirm?: (m?: string) => boolean }).confirm;
+    return Promise.resolve(fn ? fn(`${title}\n\n${message}`) : false);
+  }
+  return new Promise((resolve) => {
+    Alert.alert(
+      title,
+      message,
+      [
+        { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+        { text: confirmLabel, style: "destructive", onPress: () => resolve(true) },
+      ],
+      { cancelable: true, onDismiss: () => resolve(false) },
+    );
+  });
+}
+
+function showInfo(title: string, message: string) {
+  if (Platform.OS === "web") {
+    (globalThis as { alert?: (m?: string) => void }).alert?.(`${title}\n\n${message}`);
+    return;
+  }
+  Alert.alert(title, message);
+}
+
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -97,16 +135,16 @@ export default function ProfileScreen() {
     }
   }, [isLoading, staff]);
 
-  const handleLogout = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
+  const handleLogout = async () => {
+    safeHaptic();
+    const confirmed = await confirmAsync(
       "Logout",
       "Are you sure you want to logout?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Logout", style: "destructive", onPress: logout },
-      ]
+      "Logout",
     );
+    if (confirmed) {
+      await logout();
+    }
   };
 
   if (isLoading || !staff) {
@@ -176,11 +214,41 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Settings & Support</Text>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <MenuItem label="Change Password" icon="lock" onPress={() => {}} />
-            <MenuItem label="Language" icon="language" onPress={() => {}} />
-            <MenuItem label="Notifications" icon="notifications" onPress={() => {}} />
-            <MenuItem label="Help & Support" icon="help" onPress={() => {}} />
-            <MenuItem label="Terms & Policy" icon="description" onPress={() => {}} />
+            <MenuItem
+              label="Change Password"
+              icon="lock"
+              onPress={() =>
+                showInfo("Change Password", "This feature will be available soon.")
+              }
+            />
+            <MenuItem
+              label="Language"
+              icon="language"
+              onPress={() =>
+                showInfo("Language", "The app is currently available in English. More languages coming soon.")
+              }
+            />
+            <MenuItem
+              label="Notifications"
+              icon="notifications"
+              onPress={() =>
+                showInfo("Notifications", "Notification settings will be available soon.")
+              }
+            />
+            <MenuItem
+              label="Help & Support"
+              icon="help"
+              onPress={() =>
+                showInfo("Help & Support", "For any help, please contact your hub supervisor.")
+              }
+            />
+            <MenuItem
+              label="Terms & Policy"
+              icon="description"
+              onPress={() =>
+                showInfo("Terms & Policy", "By using the Coldverse Staff App you agree to Coldverse Supply Chain's terms of service and privacy policy.")
+              }
+            />
           </View>
         </View>
 

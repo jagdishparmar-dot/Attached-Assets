@@ -18,6 +18,11 @@ Gate routes with `<Stack.Protected guard={isAuthenticated}>` (tabs) and `<Stack.
 `expo-router/unstable-native-tabs` (`NativeTabs`) + `expo-glass-effect` `isLiquidGlassAvailable()` should drive the tab layout only on iOS.
 - **How to apply:** `if (Platform.OS === "ios") { try { useNativeTabs = isLiquidGlassAvailable() } catch {} }`; Android always uses the classic JS `Tabs`. `newArchEnabled: true` raises native-instability risk from these iOS-oriented modules.
 
+## Alert.alert & expo-haptics are broken on react-native-web (the canvas web preview)
+`Alert.alert` is a silent no-op on react-native-web and `expo-haptics` can throw — so any button whose action lives inside `Alert.alert` (e.g. a logout confirm) appears "not working" when tested in the web preview, even though it works on a real device.
+- **How to apply:** use cross-platform helpers: web → `globalThis.confirm` / `globalThis.alert` (default-deny when unavailable), native → `Alert.alert` (wrap the confirm in a Promise, and resolve `false` in `onDismiss`). Guard haptics to native only + `.catch(()=>{})`.
+- **Why:** the mobile app is exercised both on a device and in the web preview; button handlers must not depend on native-only APIs to give feedback.
+
 ## Validate persisted session on load
 `checkSession()` should verify the stored session shape (`staff.id` number, `staff.role` present, non-empty string `token`) and `AsyncStorage.removeItem` on malformed/parse failure.
 - **Why:** a stale session from an older build with a different shape can wedge the app into a broken tab state instead of falling back to login.
