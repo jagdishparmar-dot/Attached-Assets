@@ -7,6 +7,7 @@ export type StaffRole = "driver" | "picker" | "sorter" | "loader" | "supervisor"
 
 export interface StaffMember {
   id: number;
+  driverId: number | null;
   name: string;
   employeeId: string;
   role: StaffRole;
@@ -39,7 +40,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
-const SESSION_KEY = "@coldverse_session_v2";
+const SESSION_KEY = "@coldverse_session_v3";
 
 export function getApiBase(): string {
   if (Platform.OS !== "web") {

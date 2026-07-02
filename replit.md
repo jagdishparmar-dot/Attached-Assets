@@ -57,7 +57,7 @@ Cut a new release (from `artifacts/mobile/`, always with `EAS_NO_VCS=1`):
 ## Architecture decisions
 
 - Contract-first API: OpenAPI spec drives codegen; never call raw fetch in clients, always use generated hooks.
-- Session key `@coldverse_session_v2` (bumped when session shape changed).
+- Session key `@coldverse_session_v3` (bumped when session shape changed; v3 added `driverId` to the mobile staff session so drivers link to their `driversTable` row).
 - Role-based tab gating in mobile `_layout.tsx`: drivers get all 5 tabs; all others get Attendance + Track + Profile only, redirect enforced via `usePathname`.
 - Geofence check-in uses Haversine distance on the server (hub lat/lng from DB); default radius 500m.
 - GPS pings sent every 30 s from mobile `track.tsx`; admin Tracking page polls `/api/locations/active` every 30 s.

@@ -78,6 +78,9 @@ router.get("/deliveries", async (req, res): Promise<void> => {
     if (query.data.date) {
       deliveries = deliveries.filter((d) => d.deliveryDate === query.data.date);
     }
+    if (query.data.assignedDriverId !== undefined) {
+      deliveries = deliveries.filter((d) => d.assignedDriverId === query.data.assignedDriverId);
+    }
   }
 
   res.json(deliveries.reverse().map(formatDelivery));

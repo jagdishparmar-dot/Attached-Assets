@@ -24,11 +24,13 @@ export default function RouteScreen() {
   const [error, setError] = useState("");
 
   const today = new Date().toISOString().slice(0, 10);
-  const { data: deliveries } = useListDeliveries({ date: today });
+  const driverId = staff?.driverId ?? undefined;
+  const { data: deliveries } = useListDeliveries({ date: today, assignedDriverId: driverId });
 
   const myDeliveries = (deliveries ?? []).filter(
     (d) =>
-      d.assignedDriverId === staff?.id &&
+      driverId !== undefined &&
+      d.assignedDriverId === driverId &&
       d.status !== "delivered" &&
       d.status !== "failed"
   );

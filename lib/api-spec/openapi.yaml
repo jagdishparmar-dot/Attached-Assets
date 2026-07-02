@@ -92,6 +92,10 @@ paths:
           name: date
           schema:
             type: string
+        - in: query
+          name: assignedDriverId
+          schema:
+            type: integer
       responses:
         "200":
           description: List of deliveries

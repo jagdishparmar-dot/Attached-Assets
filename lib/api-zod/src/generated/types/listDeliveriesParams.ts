@@ -10,4 +10,5 @@ import type { ListDeliveriesStatus } from './listDeliveriesStatus';
 export type ListDeliveriesParams = {
 status?: ListDeliveriesStatus;
 date?: string;
+assignedDriverId?: number;
 };

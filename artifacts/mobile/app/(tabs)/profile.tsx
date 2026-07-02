@@ -24,6 +24,7 @@ const ROLE_LABELS: Record<string, string> = {
   loader: "Loader",
   supervisor: "Supervisor",
   security: "Security Guard",
+  house_keeper: "House Keeper",
 };
 
 function initials(name: string | null | undefined): string {

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { staffTable, attendanceRecords } from "@workspace/db/schema";
+import { staffTable, attendanceRecords, driversTable, deliveriesTable } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import { BulkCreateStaffBody } from "@workspace/api-zod";
 
@@ -9,7 +9,47 @@ const router = Router();
 const ROLES = ["driver", "picker", "sorter", "loader", "supervisor", "security", "house_keeper"] as const;
 const TODAY = () => new Date().toISOString().split("T")[0];
 
-function toApi(row: typeof staffTable.$inferSelect, isCheckedIn = false, checkInTime: string | null = null, checkInLat: number | null = null, checkInLng: number | null = null) {
+// Drivers live in their own table (referenced by deliveries.assignedDriverId), while the
+// mobile app authenticates against the staff table. To make a driver assignable in the
+// admin AND loggable-in on mobile, every driver-role staff member is mirrored into the
+// drivers table, linked by the shared unique employeeId.
+async function syncDriverFromStaff(row: typeof staffTable.$inferSelect) {
+  if (row.role !== "driver") return;
+  const [existing] = await db.select().from(driversTable).where(eq(driversTable.employeeId, row.employeeId));
+  if (existing) {
+    await db.update(driversTable).set({
+      name: row.name,
+      phone: row.phone,
+      hub: row.hub,
+      status: row.status,
+      licenseNumber: row.licenseNumber ?? existing.licenseNumber,
+      licenseExpiry: row.licenseExpiry,
+    }).where(eq(driversTable.id, existing.id));
+  } else {
+    await db.insert(driversTable).values({
+      name: row.name,
+      employeeId: row.employeeId,
+      phone: row.phone,
+      licenseNumber: row.licenseNumber ?? "",
+      licenseExpiry: row.licenseExpiry,
+      address: row.address,
+      emergencyContact: row.emergencyContact,
+      aadhaarNumber: row.aadhaarNumber,
+      panNumber: row.panNumber,
+      hub: row.hub,
+      status: row.status,
+      joiningDate: row.joiningDate,
+    });
+  }
+}
+
+async function resolveDriverId(row: typeof staffTable.$inferSelect): Promise<number | null> {
+  if (row.role !== "driver") return null;
+  const [driver] = await db.select({ id: driversTable.id }).from(driversTable).where(eq(driversTable.employeeId, row.employeeId));
+  return driver?.id ?? null;
+}
+
+function toApi(row: typeof staffTable.$inferSelect, isCheckedIn = false, checkInTime: string | null = null, checkInLat: number | null = null, checkInLng: number | null = null, driverId: number | null = null) {
   return {
     id: row.id,
     name: row.name,
@@ -31,6 +71,7 @@ function toApi(row: typeof staffTable.$inferSelect, isCheckedIn = false, checkIn
     checkInTime,
     checkInLat,
     checkInLng,
+    driverId,
   };
 }
 
@@ -49,8 +90,9 @@ router.post("/staff/login", async (req, res) => {
     .where(and(eq(attendanceRecords.staffId, row.id), eq(attendanceRecords.date, today)));
 
   const token = `cv-token-${row.id}-${Date.now()}`;
+  const driverId = await resolveDriverId(row);
   return res.json({
-    staff: toApi(row, !!att?.checkIn, att?.checkIn ?? null, att?.checkInLat ?? null, att?.checkInLng ?? null),
+    staff: toApi(row, !!att?.checkIn, att?.checkIn ?? null, att?.checkInLat ?? null, att?.checkInLng ?? null, driverId),
     token,
   });
 });
@@ -105,7 +147,8 @@ router.post("/staff", async (req, res) => {
     shiftEnd: body.shiftEnd ?? null,
     status: "active",
   }).returning();
-  return res.status(201).json(toApi(row));
+  await syncDriverFromStaff(row);
+  return res.status(201).json(toApi(row, false, null, null, null, await resolveDriverId(row)));
 });
 
 // POST /staff/bulk  (must be before /staff/:id)
@@ -121,7 +164,7 @@ router.post("/staff/bulk", async (req, res) => {
   for (let i = 0; i < parsed.data.staff.length; i++) {
     const s = parsed.data.staff[i];
     try {
-      await db.insert(staffTable).values({
+      const [inserted] = await db.insert(staffTable).values({
         name: s.name,
         employeeId: s.employeeId,
         role: s.role,
@@ -138,7 +181,8 @@ router.post("/staff/bulk", async (req, res) => {
         shiftStart: s.shiftStart ?? null,
         shiftEnd: s.shiftEnd ?? null,
         status: "active",
-      });
+      }).returning();
+      await syncDriverFromStaff(inserted);
       created++;
     } catch (err) {
       const cause = err instanceof Error ? (err.cause as { code?: string; message?: string } | undefined) : undefined;
@@ -189,18 +233,31 @@ router.patch("/staff/:id", async (req, res) => {
 
   const [row] = await db.update(staffTable).set(update).where(eq(staffTable.id, id)).returning();
   if (!row) return res.status(404).json({ error: "Not found" });
+  await syncDriverFromStaff(row);
 
   const today = TODAY();
   const [att] = await db.select().from(attendanceRecords)
     .where(and(eq(attendanceRecords.staffId, id), eq(attendanceRecords.date, today)));
-  return res.json(toApi(row, !!att?.checkIn, att?.checkIn ?? null, att?.checkInLat ?? null, att?.checkInLng ?? null));
+  return res.json(toApi(row, !!att?.checkIn, att?.checkIn ?? null, att?.checkInLat ?? null, att?.checkInLng ?? null, await resolveDriverId(row)));
 });
 
 // DELETE /staff/:id
 router.delete("/staff/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const [row] = await db.select().from(staffTable).where(eq(staffTable.id, id));
   await db.delete(staffTable).where(eq(staffTable.id, id));
+  if (row?.role === "driver") {
+    const [driver] = await db.select().from(driversTable).where(eq(driversTable.employeeId, row.employeeId));
+    if (driver) {
+      // Unassign any deliveries pointing at this driver so we don't leave dangling
+      // assignedDriverId references (deliveries.assignedDriverId has no FK constraint).
+      await db.update(deliveriesTable)
+        .set({ assignedDriverId: null, assignedDriverName: null })
+        .where(eq(deliveriesTable.assignedDriverId, driver.id));
+      await db.delete(driversTable).where(eq(driversTable.id, driver.id));
+    }
+  }
   return res.status(204).send();
 });
 

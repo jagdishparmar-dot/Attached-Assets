@@ -268,16 +268,6 @@ export default function DeliveryDetailScreen() {
                     )}
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[styles.statusBtn, { backgroundColor: "#FEF3C7" }]}
-                    onPress={() => markStatus("partial")}
-                    disabled={loading}
-                    activeOpacity={0.8}
-                  >
-                    <MaterialIcons name="remove-circle" size={20} color="#D97706" />
-                    <Text style={[styles.statusBtnText, { color: "#D97706" }]}>Partial Delivery</Text>
-                  </TouchableOpacity>
-
                   <TextInput
                     style={[styles.remarksInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.muted, marginBottom: 8 }]}
                     value={failReason}

@@ -756,6 +756,7 @@ date?: string;
 export type ListDeliveriesParams = {
 status?: ListDeliveriesStatus;
 date?: string;
+assignedDriverId?: number;
 };
 
 export type ListDeliveriesStatus = typeof ListDeliveriesStatus[keyof typeof ListDeliveriesStatus];

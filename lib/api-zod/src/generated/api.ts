@@ -61,7 +61,8 @@ export const GetDashboardActivityResponse = zod.array(GetDashboardActivityRespon
  */
 export const ListDeliveriesQueryParams = zod.object({
   "status": zod.enum(['pending', 'assigned', 'in_transit', 'delivered', 'failed', 'rescheduled']).optional(),
-  "date": zod.coerce.string().optional()
+  "date": zod.coerce.string().optional(),
+  "assignedDriverId": zod.coerce.number().optional()
 })
 
 export const ListDeliveriesResponseItem = zod.object({
