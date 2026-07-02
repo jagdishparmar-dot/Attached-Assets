@@ -22,7 +22,7 @@ export default function Drivers() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Drivers</h2>
-        <Button onClick={() => navigate("/admin/drivers/new")}>
+        <Button onClick={() => navigate("/drivers/new")}>
           <Plus className="mr-2 h-4 w-4" />
           Add Driver
         </Button>
@@ -72,7 +72,7 @@ export default function Drivers() {
                     <TableRow
                       key={driver.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/admin/drivers/${driver.id}`)}
+                      onClick={() => navigate(`/drivers/${driver.id}`)}
                     >
                       <TableCell className="font-medium">{driver.employeeId}</TableCell>
                       <TableCell>{driver.name}</TableCell>
@@ -88,7 +88,7 @@ export default function Drivers() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={(e) => { e.stopPropagation(); navigate(`/admin/drivers/${driver.id}/edit`); }}
+                          onClick={(e) => { e.stopPropagation(); navigate(`/drivers/${driver.id}/edit`); }}
                         >
                           <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
                         </Button>

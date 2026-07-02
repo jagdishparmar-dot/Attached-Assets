@@ -736,6 +736,16 @@ export interface HubInput {
   radiusMeters: number;
 }
 
+export interface HubUpdate {
+  name?: string;
+  city?: string;
+  /** @nullable */
+  address?: string | null;
+  lat?: number;
+  lng?: number;
+  radiusMeters?: number;
+}
+
 export type GetDashboardStatsParams = {
 /**
  * Date filter (YYYY-MM-DD). Defaults to today.

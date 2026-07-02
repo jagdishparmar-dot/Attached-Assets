@@ -31,7 +31,7 @@ export default function Customers() {
         <h2 className="text-3xl font-bold tracking-tight">Customers</h2>
         <div className="flex items-center gap-2">
           <BulkUploadDialog onImported={() => refetch()} />
-          <Button onClick={() => navigate("/admin/customers/new")}>
+          <Button onClick={() => navigate("/customers/new")}>
             <Plus className="mr-2 h-4 w-4" />
             Add Customer
           </Button>
@@ -85,7 +85,7 @@ export default function Customers() {
                     <TableRow
                       key={customer.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/admin/customers/${customer.id}`)}
+                      onClick={() => navigate(`/customers/${customer.id}`)}
                     >
                       <TableCell className="font-medium">{customer.customerCode}</TableCell>
                       <TableCell>{customer.companyName}</TableCell>
@@ -97,7 +97,7 @@ export default function Customers() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={(e) => { e.stopPropagation(); navigate(`/admin/customers/${customer.id}/edit`); }}
+                          onClick={(e) => { e.stopPropagation(); navigate(`/customers/${customer.id}/edit`); }}
                         >
                           <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
                         </Button>

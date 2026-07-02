@@ -37,7 +37,7 @@ export default function Vehicles() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Vehicles</h2>
-        <Button onClick={() => navigate("/admin/vehicles/new")}>
+        <Button onClick={() => navigate("/vehicles/new")}>
           <Plus className="mr-2 h-4 w-4" />
           Add Vehicle
         </Button>
@@ -95,7 +95,7 @@ export default function Vehicles() {
                         ) : "-"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/vehicles/${vehicle.id}/edit`)}>
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/vehicles/${vehicle.id}/edit`)}>
                           <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
                         </Button>
                       </TableCell>

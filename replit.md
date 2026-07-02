@@ -78,6 +78,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - After changing `lib/db` schema, run `pnpm --filter @workspace/db run push` then re-seed if needed.
 - `useListActiveLocations` and other Orval hooks do not accept a `query.refetchInterval` option without also providing `queryKey`; either omit refetchInterval or pass the full query options shape.
 - `expo-location` `LocationCoords.accuracy` is `number | null` — always use `?? 0` when assigning to a `number` field.
+- Admin uses wouter with `base="/admin"` (from Vite BASE_URL): all Route paths, Links, and `navigate()` calls must be base-relative (e.g. `/staff`, NOT `/admin/staff`) — double-prefixing breaks deep links with 404s.
 
 ## Pointers
 

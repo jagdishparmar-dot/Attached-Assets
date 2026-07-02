@@ -72,7 +72,7 @@ export default function DriverNew() {
       }, {
         onSuccess: () => {
           toast({ title: "Success", description: "Driver updated successfully" });
-          navigate(`/admin/drivers/${editId}`);
+          navigate(`/drivers/${editId}`);
         },
         onError: () => {
           toast({ title: "Error", description: "Failed to update driver", variant: "destructive" });
@@ -98,7 +98,7 @@ export default function DriverNew() {
     }, {
       onSuccess: (data) => {
         toast({ title: "Success", description: "Driver added successfully" });
-        navigate(`/admin/drivers/${data.id}`);
+        navigate(`/drivers/${data.id}`);
       },
       onError: () => {
         toast({ title: "Error", description: "Failed to add driver", variant: "destructive" });
@@ -111,7 +111,7 @@ export default function DriverNew() {
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate(isEdit ? `/admin/drivers/${editId}` : "/admin/drivers")}>
+        <Button variant="outline" size="icon" onClick={() => navigate(isEdit ? `/drivers/${editId}` : "/drivers")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-3xl font-bold tracking-tight">{isEdit ? "Edit Driver" : "Add New Driver"}</h2>
@@ -193,7 +193,7 @@ export default function DriverNew() {
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/admin/drivers/${editId}` : "/admin/drivers")}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/drivers/${editId}` : "/drivers")}>Cancel</Button>
           <Button type="submit" disabled={isPending}>
             {isPending ? "Saving..." : isEdit ? "Save Changes" : "Add Driver"}
           </Button>

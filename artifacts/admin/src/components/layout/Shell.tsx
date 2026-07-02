@@ -8,6 +8,7 @@ import {
   Car, 
   Building2, 
   MapPin,
+  Warehouse,
   Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,16 +27,17 @@ import {
 } from "@/components/ui/sidebar";
 
 const OPS_NAV = [
-  { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
-  { title: "Deliveries", url: "/admin/deliveries", icon: Truck },
-  { title: "Drivers", url: "/admin/drivers", icon: Users },
-  { title: "Vehicles", url: "/admin/vehicles", icon: Car },
-  { title: "Customers", url: "/admin/customers", icon: Building2 },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Deliveries", url: "/deliveries", icon: Truck },
+  { title: "Drivers", url: "/drivers", icon: Users },
+  { title: "Vehicles", url: "/vehicles", icon: Car },
+  { title: "Customers", url: "/customers", icon: Building2 },
 ];
 
 const WORKFORCE_NAV = [
-  { title: "Staff", url: "/admin/staff", icon: Users },
-  { title: "Live Tracking", url: "/admin/tracking", icon: MapPin },
+  { title: "Staff", url: "/staff", icon: Users },
+  { title: "Hubs", url: "/hubs", icon: Warehouse },
+  { title: "Live Tracking", url: "/tracking", icon: MapPin },
 ];
 
 function NavGroup({ label, items, location }: { label: string; items: typeof OPS_NAV; location: string }) {

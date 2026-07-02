@@ -98,7 +98,7 @@ export default function DeliveryDetail() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate("/admin/deliveries")}>
+        <Button variant="outline" size="icon" onClick={() => navigate("/deliveries")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>

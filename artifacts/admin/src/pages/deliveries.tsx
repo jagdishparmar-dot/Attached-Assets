@@ -108,7 +108,7 @@ export default function Deliveries() {
         <h2 className="text-3xl font-bold tracking-tight">Deliveries</h2>
         <div className="flex items-center gap-2">
           <BulkUploadDeliveryDialog onImported={() => refetch()} />
-          <Button onClick={() => navigate("/admin/deliveries/new")}>
+          <Button onClick={() => navigate("/deliveries/new")}>
             <Plus className="mr-2 h-4 w-4" />
             New Delivery
           </Button>
@@ -176,7 +176,7 @@ export default function Deliveries() {
                     <TableRow
                       key={delivery.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/admin/deliveries/${delivery.id}`)}
+                      onClick={() => navigate(`/deliveries/${delivery.id}`)}
                     >
                       <TableCell className="font-medium">{delivery.deliveryNumber}</TableCell>
                       <TableCell>{delivery.customerName}</TableCell>

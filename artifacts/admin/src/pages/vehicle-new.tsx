@@ -63,7 +63,7 @@ export default function VehicleNew() {
       updateVehicle.mutate({ id: editId, data: { ...payload, status: formData.status } }, {
         onSuccess: () => {
           toast({ title: "Success", description: "Vehicle updated successfully" });
-          navigate("/admin/vehicles");
+          navigate("/vehicles");
         },
         onError: () => {
           toast({ title: "Error", description: "Failed to update vehicle", variant: "destructive" });
@@ -73,7 +73,7 @@ export default function VehicleNew() {
       createVehicle.mutate({ data: payload }, {
         onSuccess: () => {
           toast({ title: "Success", description: "Vehicle added successfully" });
-          navigate("/admin/vehicles");
+          navigate("/vehicles");
         },
         onError: () => {
           toast({ title: "Error", description: "Failed to add vehicle", variant: "destructive" });
@@ -87,7 +87,7 @@ export default function VehicleNew() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate("/admin/vehicles")}>
+        <Button variant="outline" size="icon" onClick={() => navigate("/vehicles")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-3xl font-bold tracking-tight">{isEdit ? "Edit Vehicle" : "Add New Vehicle"}</h2>
@@ -168,7 +168,7 @@ export default function VehicleNew() {
             </div>
             
             <div className="flex justify-end gap-4 pt-4 mt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => navigate("/admin/vehicles")}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => navigate("/vehicles")}>Cancel</Button>
               <Button type="submit" disabled={isPending}>
                 {isPending ? "Saving..." : isEdit ? "Save Changes" : "Add Vehicle"}
               </Button>

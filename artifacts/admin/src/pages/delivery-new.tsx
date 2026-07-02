@@ -103,7 +103,7 @@ export default function DeliveryNew() {
     }, {
       onSuccess: (data) => {
         toast({ title: "Success", description: "Delivery created successfully" });
-        navigate(`/admin/deliveries/${data.id}`);
+        navigate(`/deliveries/${data.id}`);
       },
       onError: (err) => {
         toast({ title: "Error", description: "Failed to create delivery", variant: "destructive" });
@@ -114,7 +114,7 @@ export default function DeliveryNew() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate("/admin/deliveries")}>
+        <Button variant="outline" size="icon" onClick={() => navigate("/deliveries")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-3xl font-bold tracking-tight">New Delivery</h2>
@@ -347,7 +347,7 @@ export default function DeliveryNew() {
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/deliveries")}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => navigate("/deliveries")}>Cancel</Button>
           <Button type="submit" disabled={createDelivery.isPending}>
             {createDelivery.isPending ? "Creating..." : "Create Delivery"}
           </Button>

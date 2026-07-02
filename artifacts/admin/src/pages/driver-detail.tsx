@@ -49,7 +49,7 @@ export default function DriverDetail() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate("/admin/drivers")}>
+          <Button variant="outline" size="icon" onClick={() => navigate("/drivers")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>

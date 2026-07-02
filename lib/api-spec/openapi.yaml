@@ -755,6 +755,33 @@ paths:
               schema:
                 $ref: "#/components/schemas/Hub"
 
+  /hubs/{id}:
+    patch:
+      operationId: updateHub
+      tags: [hubs]
+      summary: Update a hub (name, city, address, geofence location/radius)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HubUpdate"
+      responses:
+        "200":
+          description: Updated hub
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hub"
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -1689,6 +1716,22 @@ components:
         - lat
         - lng
         - radiusMeters
+      properties:
+        name:
+          type: string
+        city:
+          type: string
+        address:
+          type: ["string", "null"]
+        lat:
+          type: number
+        lng:
+          type: number
+        radiusMeters:
+          type: integer
+
+    HubUpdate:
+      type: object
       properties:
         name:
           type: string

@@ -27,7 +27,7 @@ export default function CustomerDetail() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate("/admin/customers")}>
+        <Button variant="outline" size="icon" onClick={() => navigate("/customers")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
@@ -111,7 +111,7 @@ export default function CustomerDetail() {
               <p className="text-4xl font-bold">{customer.totalDeliveries || 0}</p>
             </div>
             
-            <Button className="w-full mt-6" onClick={() => navigate("/admin/deliveries/new")}>
+            <Button className="w-full mt-6" onClick={() => navigate("/deliveries/new")}>
               Create Delivery
             </Button>
           </CardContent>

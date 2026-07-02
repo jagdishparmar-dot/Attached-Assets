@@ -1106,3 +1106,30 @@ export const CreateHubResponse = zod.object({
 })
 
 
+/**
+ * @summary Update a hub (name, city, address, geofence location/radius)
+ */
+export const UpdateHubParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateHubBody = zod.object({
+  "name": zod.string().optional(),
+  "city": zod.string().optional(),
+  "address": zod.string().nullish(),
+  "lat": zod.number().optional(),
+  "lng": zod.number().optional(),
+  "radiusMeters": zod.number().optional()
+})
+
+export const UpdateHubResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "city": zod.string(),
+  "address": zod.string().nullish(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "radiusMeters": zod.number()
+})
+
+

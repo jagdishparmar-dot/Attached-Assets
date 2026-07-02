@@ -4,6 +4,7 @@ import {
   useCreateStaff,
   useUpdateStaffMember,
   useDeleteStaffMember,
+  useListHubs,
 } from "@workspace/api-client-react";
 import type { StaffInput, StaffMember } from "@workspace/api-client-react";
 import { Users, Plus, Search, UserCheck, Clock, Trash2, Pencil } from "lucide-react";
@@ -51,12 +52,6 @@ const ROLE_CONFIG: Record<Role, { label: string; color: string; bg: string }> = 
   house_keeper: { label: "House Keeper", color: "#0891B2", bg: "#CFFAFE" },
 };
 
-const HUBS = [
-  "Mumbai Central Hub",
-  "Delhi North Hub",
-  "Bangalore Hub",
-  "Mumbai East Hub",
-];
 
 interface StaffFormState {
   name: string;
@@ -110,6 +105,8 @@ export default function StaffPage() {
   const { data: staffList = [], isLoading, refetch } = useListStaff({
     role: roleFilter === "all" ? undefined : roleFilter,
   });
+  const { data: hubList = [] } = useListHubs();
+  const hubNames = hubList.map((h) => h.name);
 
   const createMutation = useCreateStaff({
     mutation: {
@@ -412,7 +409,7 @@ export default function StaffPage() {
                 <Select value={form.hub} onValueChange={(v) => setForm({ ...form, hub: v })}>
                   <SelectTrigger><SelectValue placeholder="Select hub" /></SelectTrigger>
                   <SelectContent>
-                    {HUBS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                    {hubNames.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -491,7 +488,7 @@ export default function StaffPage() {
                 <Select value={editForm.hub} onValueChange={(v) => setEditForm({ ...editForm, hub: v })}>
                   <SelectTrigger><SelectValue placeholder="Select hub" /></SelectTrigger>
                   <SelectContent>
-                    {HUBS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+                    {hubNames.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

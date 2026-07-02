@@ -45,6 +45,7 @@ export * from './getMyAttendanceParams';
 export * from './healthStatus';
 export * from './hub';
 export * from './hubInput';
+export * from './hubUpdate';
 export * from './listActiveLocationsParams';
 export * from './listDeliveriesParams';
 export * from './listDeliveriesStatus';

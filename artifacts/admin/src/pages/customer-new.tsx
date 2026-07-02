@@ -69,7 +69,7 @@ export default function CustomerNew() {
       updateCustomer.mutate({ id: editId, data: payload }, {
         onSuccess: () => {
           toast({ title: "Success", description: "Customer updated successfully" });
-          navigate(`/admin/customers/${editId}`);
+          navigate(`/customers/${editId}`);
         },
         onError: () => {
           toast({ title: "Error", description: "Failed to update customer", variant: "destructive" });
@@ -81,7 +81,7 @@ export default function CustomerNew() {
     createCustomer.mutate({ data: payload }, {
       onSuccess: (data) => {
         toast({ title: "Success", description: "Customer added successfully" });
-        navigate(`/admin/customers/${data.id}`);
+        navigate(`/customers/${data.id}`);
       },
       onError: () => {
         toast({ title: "Error", description: "Failed to add customer", variant: "destructive" });
@@ -94,13 +94,13 @@ export default function CustomerNew() {
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate(isEdit ? `/admin/customers/${editId}` : "/admin/customers")}>
+        <Button variant="outline" size="icon" onClick={() => navigate(isEdit ? `/customers/${editId}` : "/customers")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-3xl font-bold tracking-tight">{isEdit ? "Edit Customer" : "Add New Customer"}</h2>
         {!isEdit && (
           <div className="ml-auto">
-            <BulkUploadDialog onImported={() => navigate("/admin/customers")} />
+            <BulkUploadDialog onImported={() => navigate("/customers")} />
           </div>
         )}
       </div>
@@ -163,7 +163,7 @@ export default function CustomerNew() {
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/admin/customers/${editId}` : "/admin/customers")}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/customers/${editId}` : "/customers")}>Cancel</Button>
           <Button type="submit" disabled={isPending}>
             {isPending ? "Saving..." : isEdit ? "Save Changes" : "Add Customer"}
           </Button>

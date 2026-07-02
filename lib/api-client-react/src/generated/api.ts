@@ -46,6 +46,7 @@ import type {
   HealthStatus,
   Hub,
   HubInput,
+  HubUpdate,
   ListActiveLocationsParams,
   ListDeliveriesParams,
   ListDriversParams,
@@ -2773,5 +2774,76 @@ export const useCreateHub = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateHubMutationOptions(options));
+    }
+
+export const getUpdateHubUrl = (id: number,) => {
+
+
+
+
+  return `/api/hubs/${id}`
+}
+
+/**
+ * @summary Update a hub (name, city, address, geofence location/radius)
+ */
+export const updateHub = async (id: number,
+    hubUpdate: HubUpdate, options?: RequestInit): Promise<Hub> => {
+
+  return customFetch<Hub>(getUpdateHubUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(hubUpdate)
+  }
+);}
+
+
+
+
+export const getUpdateHubMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateHub>>, TError,{id: number;data: BodyType<HubUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateHub>>, TError,{id: number;data: BodyType<HubUpdate>}, TContext> => {
+
+const mutationKey = ['updateHub'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateHub>>, {id: number;data: BodyType<HubUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateHub(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateHubMutationResult = NonNullable<Awaited<ReturnType<typeof updateHub>>>
+    export type UpdateHubMutationBody = BodyType<HubUpdate>
+    export type UpdateHubMutationError = ErrorType<void>
+
+    /**
+ * @summary Update a hub (name, city, address, geofence location/radius)
+ */
+export const useUpdateHub = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateHub>>, TError,{id: number;data: BodyType<HubUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateHub>>,
+        TError,
+        {id: number;data: BodyType<HubUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateHubMutationOptions(options));
     }
 

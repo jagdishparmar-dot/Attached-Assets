@@ -17,6 +17,7 @@ import Customers from "@/pages/customers";
 import CustomerNew from "@/pages/customer-new";
 import CustomerDetail from "@/pages/customer-detail";
 import Staff from "@/pages/staff";
+import Hubs from "@/pages/hubs";
 import Tracking from "@/pages/tracking";
 import NotFound from "@/pages/not-found";
 
@@ -27,34 +28,32 @@ function Router() {
     <Shell>
       <Switch>
         <Route path="/">
-          <Redirect to="/admin/dashboard" />
-        </Route>
-        <Route path="/admin">
-          <Redirect to="/admin/dashboard" />
+          <Redirect to="/dashboard" />
         </Route>
         
-        <Route path="/admin/dashboard" component={Dashboard} />
+        <Route path="/dashboard" component={Dashboard} />
         
-        <Route path="/admin/deliveries/new" component={DeliveryNew} />
-        <Route path="/admin/deliveries/:id" component={DeliveryDetail} />
-        <Route path="/admin/deliveries" component={Deliveries} />
+        <Route path="/deliveries/new" component={DeliveryNew} />
+        <Route path="/deliveries/:id" component={DeliveryDetail} />
+        <Route path="/deliveries" component={Deliveries} />
         
-        <Route path="/admin/drivers/new" component={DriverNew} />
-        <Route path="/admin/drivers/:id/edit" component={DriverNew} />
-        <Route path="/admin/drivers/:id" component={DriverDetail} />
-        <Route path="/admin/drivers" component={Drivers} />
+        <Route path="/drivers/new" component={DriverNew} />
+        <Route path="/drivers/:id/edit" component={DriverNew} />
+        <Route path="/drivers/:id" component={DriverDetail} />
+        <Route path="/drivers" component={Drivers} />
         
-        <Route path="/admin/vehicles/new" component={VehicleNew} />
-        <Route path="/admin/vehicles/:id/edit" component={VehicleNew} />
-        <Route path="/admin/vehicles" component={Vehicles} />
+        <Route path="/vehicles/new" component={VehicleNew} />
+        <Route path="/vehicles/:id/edit" component={VehicleNew} />
+        <Route path="/vehicles" component={Vehicles} />
         
-        <Route path="/admin/customers/new" component={CustomerNew} />
-        <Route path="/admin/customers/:id/edit" component={CustomerNew} />
-        <Route path="/admin/customers/:id" component={CustomerDetail} />
-        <Route path="/admin/customers" component={Customers} />
+        <Route path="/customers/new" component={CustomerNew} />
+        <Route path="/customers/:id/edit" component={CustomerNew} />
+        <Route path="/customers/:id" component={CustomerDetail} />
+        <Route path="/customers" component={Customers} />
 
-        <Route path="/admin/staff" component={Staff} />
-        <Route path="/admin/tracking" component={Tracking} />
+        <Route path="/staff" component={Staff} />
+        <Route path="/hubs" component={Hubs} />
+        <Route path="/tracking" component={Tracking} />
         
         <Route component={NotFound} />
       </Switch>
