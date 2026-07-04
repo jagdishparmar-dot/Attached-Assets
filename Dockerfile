@@ -42,6 +42,8 @@ COPY --from=build /app/artifacts/api-server/dist ./artifacts/api-server/dist
 COPY --from=build /app/artifacts/admin/dist/public /usr/share/nginx/html/admin
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/wait-for-db.mjs ./docker/wait-for-db.mjs
+COPY docker/run-drizzle.mjs ./docker/run-drizzle.mjs
+COPY docker/run-seed.mjs ./docker/run-seed.mjs
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

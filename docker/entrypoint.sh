@@ -1,9 +1,6 @@
 #!/bin/sh
 set -e
 
-export NODE_OPTIONS="--import /app/load-env.mjs"
-export PATH="/app/node_modules/.bin:$PATH"
-
 wait_for_db() {
   if [ -z "$DATABASE_URL" ]; then
     echo "DATABASE_URL is not set" >&2
@@ -27,14 +24,12 @@ wait_for_db() {
 
 run_db_migration() {
   echo "Applying database schema (drizzle push)..."
-  cd /app/lib/db
-  drizzle-kit push --config ./drizzle.config.ts
+  node /app/docker/run-drizzle.mjs
 }
 
 run_db_seed() {
   echo "Seeding database..."
-  cd /app
-  tsx ./scripts/src/seed-staff.ts
+  node /app/docker/run-seed.mjs
 }
 
 if [ "$RUN_DB_MIGRATION" = "true" ]; then
@@ -47,7 +42,7 @@ if [ "$RUN_DB_SEED" = "true" ]; then
   run_db_seed
 fi
 
-node --enable-source-maps /app/artifacts/api-server/dist/index.mjs &
+node --import /app/load-env.mjs --enable-source-maps /app/artifacts/api-server/dist/index.mjs &
 API_PID=$!
 
 trap 'kill -TERM "$API_PID" 2>/dev/null; wait "$API_PID" 2>/dev/null' TERM INT
