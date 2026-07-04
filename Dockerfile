@@ -3,13 +3,13 @@
 FROM node:24-bookworm-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-# Pin pnpm 9.x — lockfile v9 + workspace overrides are incompatible with pnpm 11's frozen install
+# Pin pnpm to the lockfile toolchain (9.2.x) and copy .npmrc so frozen install settings match
 RUN corepack enable \
-  && corepack prepare pnpm@9.15.9 --activate
+  && corepack prepare pnpm@9.2.0 --activate
 
 FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY artifacts ./artifacts
 COPY lib ./lib
 COPY scripts ./scripts
