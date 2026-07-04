@@ -1,5 +1,7 @@
 import { Router, type IRouter } from "express";
+import { requireAdminUnlessPublic } from "../middleware/require-admin";
 import healthRouter from "./health";
+import adminRouter from "./admin";
 import dashboardRouter from "./dashboard";
 import driversRouter from "./drivers";
 import vehiclesRouter from "./vehicles";
@@ -14,6 +16,8 @@ import aiRouter from "./ai";
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(adminRouter);
+router.use(requireAdminUnlessPublic);
 router.use(dashboardRouter);
 router.use(driversRouter);
 router.use(vehiclesRouter);

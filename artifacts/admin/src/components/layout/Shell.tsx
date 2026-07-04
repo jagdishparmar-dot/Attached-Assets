@@ -1,17 +1,19 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import logoUrl from "@assets/Screenshot_2026-06-29_at_8.17.10_PM_1782744451491.png";
-import { 
-  LayoutDashboard, 
-  Truck, 
-  Users, 
-  Car, 
-  Building2, 
+import {
+  LayoutDashboard,
+  Truck,
+  Users,
+  Car,
+  Building2,
   MapPin,
   Warehouse,
-  Bell
+  Bell,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth, initials } from "@/context/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -72,6 +74,7 @@ function NavGroup({ label, items, location }: { label: string; items: typeof OPS
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { admin, logout } = useAuth();
 
   return (
     <SidebarProvider>
@@ -92,14 +95,30 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <SidebarTrigger className="-ml-2" />
               <h1 className="text-lg font-semibold tracking-tight">Admin Console</h1>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" className="text-muted-foreground relative">
                 <Bell className="h-5 w-5" />
                 <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-destructive"></span>
               </Button>
-              <div className="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-medium">
-                JS
+              <div className="hidden sm:block text-right">
+                <p className="text-sm font-medium leading-none">{admin?.name}</p>
+                <p className="text-xs text-muted-foreground mt-1 capitalize">{admin?.role}</p>
               </div>
+              <div
+                className="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-medium text-sm"
+                title={admin?.name}
+              >
+                {admin ? initials(admin.name) : "?"}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground"
+                onClick={() => void logout()}
+                title="Sign out"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
             </div>
           </header>
           <main className="flex-1 overflow-auto p-6">

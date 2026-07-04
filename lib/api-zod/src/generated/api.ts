@@ -17,6 +17,45 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Authenticate an admin user (supervisor role)
+ */
+export const AdminLoginBody = zod.object({
+  "phone": zod.string(),
+  "password": zod.string()
+})
+
+export const AdminLoginResponse = zod.object({
+  "admin": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "employeeId": zod.string(),
+  "role": zod.string(),
+  "phone": zod.string(),
+  "hub": zod.string()
+})
+})
+
+
+/**
+ * @summary End the admin session
+ */
+export const AdminLogoutResponse = zod.void()
+
+
+/**
+ * @summary Get the current admin session
+ */
+export const GetAdminSessionResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "employeeId": zod.string(),
+  "role": zod.string(),
+  "phone": zod.string(),
+  "hub": zod.string()
+})
+
+
+/**
  * @summary Get dashboard summary statistics
  */
 export const GetDashboardStatsQueryParams = zod.object({

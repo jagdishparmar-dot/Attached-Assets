@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: admin
+    description: Admin panel authentication
   - name: dashboard
     description: Dashboard stats
   - name: deliveries
@@ -42,6 +44,53 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Authenticate an admin user (supervisor role)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginInput"
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAuthResult"
+        "401":
+          description: Invalid credentials
+        "403":
+          description: Account not permitted for admin access
+
+  /admin/logout:
+    post:
+      operationId: adminLogout
+      tags: [admin]
+      summary: End the admin session
+      responses:
+        "204":
+          description: Logged out
+
+  /admin/me:
+    get:
+      operationId: getAdminSession
+      tags: [admin]
+      summary: Get the current admin session
+      responses:
+        "200":
+          description: Current admin user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "401":
+          description: Not authenticated
 
   /dashboard/stats:
     get:
@@ -1549,6 +1598,48 @@ components:
           $ref: "#/components/schemas/StaffMember"
         token:
           type: string
+
+    AdminLoginInput:
+      type: object
+      required:
+        - phone
+        - password
+      properties:
+        phone:
+          type: string
+        password:
+          type: string
+
+    AdminUser:
+      type: object
+      required:
+        - id
+        - name
+        - employeeId
+        - role
+        - phone
+        - hub
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        employeeId:
+          type: string
+        role:
+          type: string
+        phone:
+          type: string
+        hub:
+          type: string
+
+    AdminAuthResult:
+      type: object
+      required:
+        - admin
+      properties:
+        admin:
+          $ref: "#/components/schemas/AdminUser"
 
     # ── Attendance schemas ──────────────────────────────────────
     AttendanceEntry:

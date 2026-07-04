@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-dms}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-dms}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-dms}
+      PORT: "8080"
+      NODE_ENV: production
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      RUN_DB_MIGRATION: ${RUN_DB_MIGRATION:-false}
+      RUN_DB_SEED: ${RUN_DB_SEED:-false}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      AI_INTEGRATIONS_OPENAI_BASE_URL: ${AI_INTEGRATIONS_OPENAI_BASE_URL:-https://api.openai.com/v1}
+      AI_INTEGRATIONS_OPENAI_API_KEY: ${AI_INTEGRATIONS_OPENAI_API_KEY:-placeholder}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

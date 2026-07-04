@@ -1,10 +1,49 @@
-# Coldverse DMS
+# Local development
 
-Delivery Management System for Coldverse Supply Chain Pvt. Ltd. — manages drivers, warehouse staff, attendance, and live GPS tracking across logistics hubs.
+## Prerequisites
 
-## Run & Operate
+- Node.js 24, pnpm 9
+- PostgreSQL with database `dms` (see `.env`)
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+## First-time setup
+
+```bash
+pnpm install
+pnpm db:setup    # push schema + seed staff
+```
+
+## Run locally
+
+```bash
+pnpm dev         # API on :8080, admin on :5173/admin/
+```
+
+| Command | Purpose |
+|---------|---------|
+| `pnpm dev:api` | API server only |
+| `pnpm dev:admin` | Admin panel only |
+| `pnpm db:push` | Apply schema changes |
+| `pnpm db:seed` | Seed hubs + staff |
+
+## Docker (VPS)
+
+```bash
+cp .env.example .env   # set SESSION_SECRET; keep RUN_DB_MIGRATION/RUN_DB_SEED true for first deploy
+docker compose up -d --build
+```
+
+After the first successful deploy, set `RUN_DB_MIGRATION=false` and `RUN_DB_SEED=false` in `.env`.
+
+- App: http://your-vps/admin/
+- API health: http://your-vps/api/healthz
+- Set `COOKIE_SECURE=true` in `.env` when using HTTPS
+
+Copy `.env.example` to `.env` and adjust credentials.
+
+**Admin login:** supervisor accounts only — phone `9876500007` or `9876500008`, password `cold@123`.
+
+**Mobile login:** phone `9876543210`, password `cold@123`.
+
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -73,7 +112,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-- Do NOT run `pnpm dev` at workspace root — use `restart_workflow` instead.
+- On Replit, use `restart_workflow` instead of local `pnpm dev` (local dev uses `pnpm dev` from the repo root).
 - After changing `lib/api-spec/openapi.yaml`, always run `pnpm --filter @workspace/api-spec run codegen` before typechecking clients.
 - After changing `lib/db` schema, run `pnpm --filter @workspace/db run push` then re-seed if needed.
 - `useListActiveLocations` and other Orval hooks do not accept a `query.refetchInterval` option without also providing `queryKey`; either omit refetchInterval or pass the full query options shape.

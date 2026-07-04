@@ -2,6 +2,7 @@ import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Shell } from "@/components/layout/Shell";
 
 import Dashboard from "@/pages/dashboard";
@@ -20,32 +21,47 @@ import Staff from "@/pages/staff";
 import Hubs from "@/pages/hubs";
 import Tracking from "@/pages/tracking";
 import NotFound from "@/pages/not-found";
+import LoginPage from "@/pages/login";
 
 const queryClient = new QueryClient();
 
-function Router() {
+function ProtectedRoutes() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading session…
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
   return (
     <Shell>
       <Switch>
         <Route path="/">
           <Redirect to="/dashboard" />
         </Route>
-        
+
         <Route path="/dashboard" component={Dashboard} />
-        
+
         <Route path="/deliveries/new" component={DeliveryNew} />
         <Route path="/deliveries/:id" component={DeliveryDetail} />
         <Route path="/deliveries" component={Deliveries} />
-        
+
         <Route path="/drivers/new" component={DriverNew} />
         <Route path="/drivers/:id/edit" component={DriverNew} />
         <Route path="/drivers/:id" component={DriverDetail} />
         <Route path="/drivers" component={Drivers} />
-        
+
         <Route path="/vehicles/new" component={VehicleNew} />
         <Route path="/vehicles/:id/edit" component={VehicleNew} />
         <Route path="/vehicles" component={Vehicles} />
-        
+
         <Route path="/customers/new" component={CustomerNew} />
         <Route path="/customers/:id/edit" component={CustomerNew} />
         <Route path="/customers/:id" component={CustomerDetail} />
@@ -54,7 +70,7 @@ function Router() {
         <Route path="/staff" component={Staff} />
         <Route path="/hubs" component={Hubs} />
         <Route path="/tracking" component={Tracking} />
-        
+
         <Route component={NotFound} />
       </Switch>
     </Shell>
@@ -64,12 +80,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <ProtectedRoutes />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

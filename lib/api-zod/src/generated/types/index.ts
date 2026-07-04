@@ -8,6 +8,9 @@
 
 export * from './activityItem';
 export * from './activityItemType';
+export * from './adminAuthResult';
+export * from './adminLoginInput';
+export * from './adminUser';
 export * from './attendanceCheckin';
 export * from './attendanceCheckout';
 export * from './attendanceEntry';
