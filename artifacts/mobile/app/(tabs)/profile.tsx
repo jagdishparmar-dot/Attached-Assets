@@ -228,14 +228,14 @@ export default function ProfileScreen() {
           <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
             <View style={styles.modalIconRow}>
               <View style={[styles.modalIconCircle, { backgroundColor: colors.muted }]}>
-                <MaterialIcons name="dns" size={24} color={colors.primary} />
+                <MaterialIcons name="device-hub" size={24} color={colors.primary} />
               </View>
             </View>
             <Text style={[styles.modalTitle, { color: colors.foreground }]}>
-              Change Server URL
+              Hub URL
             </Text>
             <Text style={[styles.modalSubtitle, { color: colors.mutedForeground }]}>
-              Enter the new API server URL
+              Enter the new Hub connection URL
             </Text>
             <View
               style={[
@@ -427,8 +427,8 @@ export default function ProfileScreen() {
             ]}
           >
             <MenuItem
-              label="Server URL"
-              icon="dns"
+              label="Hub URL"
+              icon="device-hub"
               onPress={openUrlModal}
             />
             <MenuItem

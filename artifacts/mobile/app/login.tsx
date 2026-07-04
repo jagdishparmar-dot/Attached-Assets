@@ -115,14 +115,14 @@ export default function LoginScreen() {
           <View style={[styles.modalCard, { backgroundColor: "#FFFFFF" }]}>
             <View style={styles.modalIconRow}>
               <View style={styles.modalIconCircle}>
-                <MaterialIcons name="dns" size={26} color="#1A3A6B" />
+                <MaterialIcons name="device-hub" size={26} color="#1A3A6B" />
               </View>
             </View>
             <Text style={[styles.modalTitle, { color: "#0A1628" }]}>
-              Change Server URL
+              Hub URL
             </Text>
             <Text style={[styles.modalSubtitle, { color: "#6B7A8D" }]}>
-              Enter the correct API server URL
+              Enter the correct Hub connection URL
             </Text>
             <View
               style={[
@@ -186,7 +186,7 @@ export default function LoginScreen() {
           onPress={openUrlModal}
           activeOpacity={0.7}
         >
-          <MaterialIcons name="dns" size={18} color="#8BAFC7" />
+          <MaterialIcons name="device-hub" size={18} color="#8BAFC7" />
         </TouchableOpacity>
       )}
 
@@ -343,9 +343,9 @@ export default function LoginScreen() {
                 onPress={openUrlModal}
                 activeOpacity={0.7}
               >
-                <MaterialIcons name="dns" size={13} color="#9BACC4" />
+                <MaterialIcons name="device-hub" size={13} color="#9BACC4" />
                 <Text style={styles.changeUrlText}>
-                  {apiUrl ?? "Server URL not set"} · Change
+                  {apiUrl ?? "Hub not configured"} · Change
                 </Text>
               </TouchableOpacity>
             )}

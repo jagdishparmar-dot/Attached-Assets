@@ -24,7 +24,7 @@ function isValidUrl(url: string): boolean {
   return /^https:\/\/.+\..+/.test(url.trim());
 }
 
-export default function ServerSetupScreen() {
+export default function HubSetupScreen() {
   const insets = useSafeAreaInsets();
   const { setApiUrl } = useAuth();
 
@@ -32,31 +32,33 @@ export default function ServerSetupScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSave = async () => {
+  const handleConnect = async () => {
     const trimmed = url.trim().replace(/\/+$/, "");
     if (!trimmed) {
-      setError("Please enter the server URL.");
+      setError("Please enter your Hub URL to continue.");
       return;
     }
     if (!isValidUrl(trimmed)) {
-      setError('URL must start with "https://" (HTTP is not supported for security).');
+      setError('Hub URL must start with "https://" — e.g. https://yourhub.replit.app');
       return;
     }
     setError("");
     setSaving(true);
     try {
       await setApiUrl(trimmed);
-      // Stack.Protected guard in _layout.tsx transitions to login automatically
-      // once isApiConfigured becomes true — no explicit router.push needed.
+      // Stack.Protected guard in _layout.tsx navigates to login automatically.
     } catch {
-      setError("Could not save the URL. Please try again.");
+      setError("Could not save the Hub URL. Please try again.");
       setSaving(false);
     }
   };
 
   return (
     <View style={[styles.root, { backgroundColor: "#0A2540" }]}>
-      <View style={styles.topBlob} />
+      {/* Decorative blobs */}
+      <View style={styles.blobTopRight} />
+      <View style={styles.blobBottomLeft} />
+
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -65,14 +67,15 @@ export default function ServerSetupScreen() {
           contentContainerStyle={[
             styles.scroll,
             {
-              paddingTop: insets.top + 40,
+              paddingTop: insets.top + 32,
               paddingBottom: insets.bottom + 40,
             },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.logoSection}>
+          {/* ── Brand header ── */}
+          <View style={styles.brandSection}>
             <View style={styles.logoWrapper}>
               <Image
                 source={require("../assets/images/logo.png")}
@@ -80,27 +83,43 @@ export default function ServerSetupScreen() {
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.appLabel}>First Time Setup</Text>
+            <View style={styles.hubBadge}>
+              <MaterialIcons name="device-hub" size={11} color="#F5A623" />
+              <Text style={styles.hubBadgeText}>HUB SETUP</Text>
+            </View>
           </View>
 
+          {/* ── Main card ── */}
           <View style={[styles.card, { backgroundColor: "#FFFFFF" }]}>
-            <View style={styles.iconRow}>
-              <View style={styles.iconCircle}>
-                <MaterialIcons name="dns" size={28} color="#1A3A6B" />
+            {/* Icon */}
+            <View style={styles.iconSection}>
+              <View style={styles.iconRing}>
+                <View style={styles.iconCircle}>
+                  <MaterialIcons name="device-hub" size={32} color="#1A3A6B" />
+                </View>
               </View>
             </View>
 
             <Text style={[styles.cardTitle, { color: "#0A1628" }]}>
-              Connect to Server
+              Connect to Your Hub
             </Text>
             <Text style={[styles.cardSubtitle, { color: "#6B7A8D" }]}>
-              Enter your Coldverse API server URL. This is a one-time setup —
-              the URL will be saved on your device permanently.
+              Enter the Hub URL provided by your Coldverse admin to get started.
+              Your connection will be saved securely on this device.
             </Text>
 
+            {/* One-time badge */}
+            <View style={styles.onceStrip}>
+              <MaterialIcons name="check-circle" size={13} color="#0A8A4A" />
+              <Text style={styles.onceStripText}>
+                One-time setup · Your Hub URL is saved for future logins
+              </Text>
+            </View>
+
+            {/* URL field */}
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { color: "#1A3A6B" }]}>
-                Server URL
+                Hub URL
               </Text>
               <View
                 style={[
@@ -119,19 +138,22 @@ export default function ServerSetupScreen() {
                     setUrl(t);
                     setError("");
                   }}
-                  placeholder="https://yourapp.replit.app"
+                  placeholder="https://yourhub.replit.app"
                   placeholderTextColor="#9BACC4"
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="url"
                   textContentType="URL"
+                  returnKeyType="done"
+                  onSubmitEditing={handleConnect}
                 />
               </View>
               <Text style={styles.fieldHint}>
-                No trailing slash — e.g.&nbsp;https://yourapp.replit.app
+                Provided by your Coldverse admin — starts with https://
               </Text>
             </View>
 
+            {/* Error */}
             {error ? (
               <View style={styles.errorBox}>
                 <MaterialIcons name="error-outline" size={16} color="#DC2626" />
@@ -139,13 +161,13 @@ export default function ServerSetupScreen() {
               </View>
             ) : null}
 
+            {/* CTA button */}
             <TouchableOpacity
               style={[
-                styles.saveBtn,
-                { backgroundColor: "#1A3A6B" },
-                saving && styles.saveBtnDisabled,
+                styles.connectBtn,
+                saving && styles.connectBtnDisabled,
               ]}
-              onPress={handleSave}
+              onPress={handleConnect}
               disabled={saving}
               activeOpacity={0.85}
             >
@@ -153,28 +175,25 @@ export default function ServerSetupScreen() {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <>
-                  <MaterialIcons
-                    name="check-circle"
-                    size={20}
-                    color="#FFFFFF"
-                  />
-                  <Text style={styles.saveBtnText}>Save & Connect</Text>
+                  <MaterialIcons name="device-hub" size={20} color="#FFFFFF" />
+                  <Text style={styles.connectBtnText}>Connect to Hub</Text>
                 </>
               )}
             </TouchableOpacity>
 
-            <View style={styles.infoBox}>
-              <MaterialIcons name="info-outline" size={14} color="#1A3A6B" />
-              <Text style={[styles.infoText, { color: "#4A6585" }]}>
-                Contact your admin for the correct server URL. You can update
-                it later from Profile → Server URL.
+            {/* Help text */}
+            <View style={styles.helpBox}>
+              <MaterialIcons name="help-outline" size={14} color="#6B7A8D" />
+              <Text style={[styles.helpText, { color: "#6B7A8D" }]}>
+                Don't have your Hub URL?&nbsp;
+                <Text style={{ color: "#1A3A6B", fontFamily: "Inter_600SemiBold" }}>
+                  Ask your hub supervisor or admin.
+                </Text>
               </Text>
             </View>
           </View>
 
-          <Text style={styles.footer}>
-            Coldverse Supply Chain Pvt. Ltd.
-          </Text>
+          <Text style={styles.footer}>Coldverse Supply Chain Pvt. Ltd.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -184,96 +203,171 @@ export default function ServerSetupScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  topBlob: {
+  blobTopRight: {
     position: "absolute",
-    top: -80,
-    right: -80,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
+    top: -100,
+    right: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
     backgroundColor: "#2E6BE6",
-    opacity: 0.15,
+    opacity: 0.12,
+  },
+  blobBottomLeft: {
+    position: "absolute",
+    bottom: -80,
+    left: -80,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "#1A3A6B",
+    opacity: 0.18,
   },
   scroll: { paddingHorizontal: 24 },
-  logoSection: { alignItems: "center", marginBottom: 32 },
+
+  // ── Brand header ──
+  brandSection: { alignItems: "center", marginBottom: 28 },
   logoWrapper: {
-    width: 220,
-    height: 80,
-    marginBottom: 16,
+    width: 200,
+    height: 70,
+    marginBottom: 14,
     backgroundColor: "#FFFFFF",
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   logoImage: { width: "100%", height: "100%" },
-  appLabel: {
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    color: "#F5A623",
-    marginTop: 8,
-    letterSpacing: 2,
-    textTransform: "uppercase",
-  },
-  card: {
+  hubBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(245,166,35,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(245,166,35,0.35)",
     borderRadius: 20,
-    padding: 24,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  hubBadgeText: {
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    color: "#F5A623",
+    letterSpacing: 1.5,
+  },
+
+  // ── Card ──
+  card: {
+    borderRadius: 24,
+    padding: 28,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.12,
-        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.14,
+        shadowRadius: 24,
       },
-      android: { elevation: 8 },
+      android: { elevation: 10 },
     }),
   },
-  iconRow: { alignItems: "center", marginBottom: 16 },
-  iconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
+
+  // ── Icon ──
+  iconSection: { alignItems: "center", marginBottom: 20 },
+  iconRing: {
+    width: 84,
+    height: 84,
+    borderRadius: 24,
     backgroundColor: "#EEF3FB",
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#D6E4F7",
   },
+  iconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+    backgroundColor: "#DBEAFE",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
   cardTitle: {
     fontSize: 22,
     fontFamily: "Inter_700Bold",
-    marginBottom: 6,
     textAlign: "center",
+    marginBottom: 8,
+    lineHeight: 28,
   },
   cardSubtitle: {
     fontSize: 14,
     fontFamily: "Inter_400Regular",
-    marginBottom: 24,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 21,
+    marginBottom: 18,
   },
+
+  // ── One-time strip ──
+  onceStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    backgroundColor: "#F0FDF4",
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 22,
+  },
+  onceStripText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    color: "#166534",
+    lineHeight: 17,
+  },
+
+  // ── URL field ──
   fieldGroup: { marginBottom: 16 },
-  fieldLabel: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginBottom: 8 },
+  fieldLabel: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 8,
+    letterSpacing: 0.2,
+  },
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    borderWidth: 1.5,
-    borderRadius: 12,
+    borderWidth: 2,
+    borderRadius: 14,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
-  input: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    letterSpacing: 0.1,
+  },
   fieldHint: {
     fontSize: 11,
     fontFamily: "Inter_400Regular",
     color: "#9BACC4",
-    marginTop: 6,
+    marginTop: 7,
+    lineHeight: 15,
   },
+
+  // ── Error ──
   errorBox: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#FEE2E2",
-    padding: 10,
-    borderRadius: 10,
+    alignItems: "flex-start",
+    gap: 7,
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    padding: 12,
+    borderRadius: 12,
     marginBottom: 16,
   },
   errorText: {
@@ -281,33 +375,54 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_500Medium",
     flex: 1,
+    lineHeight: 18,
   },
-  saveBtn: {
+
+  // ── Connect button ──
+  connectBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 15,
-    borderRadius: 14,
-    marginTop: 8,
+    gap: 10,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: "#1A3A6B",
+    marginTop: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#1A3A6B",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: { elevation: 4 },
+    }),
   },
-  saveBtnDisabled: { opacity: 0.7 },
-  saveBtnText: { color: "#FFFFFF", fontSize: 16, fontFamily: "Inter_700Bold" },
-  infoBox: {
+  connectBtnDisabled: { opacity: 0.7 },
+  connectBtnText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.3,
+  },
+
+  // ── Help box ──
+  helpBox: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 6,
-    marginTop: 16,
-    backgroundColor: "#EEF3FB",
-    padding: 10,
+    marginTop: 18,
+    backgroundColor: "#F8FAFC",
     borderRadius: 10,
+    padding: 12,
   },
-  infoText: {
+  helpText: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
     flex: 1,
-    lineHeight: 17,
+    lineHeight: 18,
   },
+
   footer: {
     textAlign: "center",
     color: "#4A6585",
