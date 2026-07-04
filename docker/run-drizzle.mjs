@@ -1,12 +1,16 @@
-import { createRequire } from "node:module";
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import "../load-env.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const require = createRequire(path.join(root, "lib/db/package.json"));
-const drizzleBin = require.resolve("drizzle-kit/bin.cjs");
+const drizzleBin = path.join(root, "lib/db/node_modules/drizzle-kit/bin.cjs");
+
+if (!fs.existsSync(drizzleBin)) {
+  console.error(`drizzle-kit binary not found at ${drizzleBin}`);
+  process.exit(1);
+}
 
 const result = spawnSync(
   process.execPath,
