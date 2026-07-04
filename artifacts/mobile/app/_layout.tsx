@@ -22,20 +22,26 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isApiConfigured } = useAuth();
 
   if (isLoading) return null;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={isAuthenticated}>
+      {/* Step 1 — show setup screen on first launch until a server URL is saved */}
+      <Stack.Protected guard={!isApiConfigured}>
+        <Stack.Screen name="setup" />
+      </Stack.Protected>
+      {/* Step 2 — authenticated: show tabs + delivery detail */}
+      <Stack.Protected guard={isApiConfigured && isAuthenticated}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="delivery/[id]"
           options={{ presentation: "card", headerShown: false }}
         />
       </Stack.Protected>
-      <Stack.Protected guard={!isAuthenticated}>
+      {/* Step 3 — configured but not yet logged in */}
+      <Stack.Protected guard={isApiConfigured && !isAuthenticated}>
         <Stack.Screen name="login" />
       </Stack.Protected>
     </Stack>

@@ -19,6 +19,9 @@ Gate routes with `<Stack.Protected guard={isAuthenticated}>` (tabs) and `<Stack.
 - **How to apply:** `if (Platform.OS === "ios") { try { useNativeTabs = isLiquidGlassAvailable() } catch {} }`; Android always uses the classic JS `Tabs`. `newArchEnabled: true` raises native-instability risk from these iOS-oriented modules.
 - **Confirmed on device:** gating native tabs to iOS + declarative `Stack.Protected` was verified on a real Android release build — cold start lands on login and Profile no longer crashes. The web e2e + typecheck alone could NOT reproduce the native crash, so a device smoke test is the only real confirmation for this class of fix.
 
+## Runtime server URL setup (AsyncStorage @coldverse_api_url)
+AuthContext now holds apiUrl + isApiConfigured (web=always true; native=!!apiUrl). A module-level _apiUrlCache keeps getApiBase() synchronous. setApiUrl() saves to AsyncStorage, updates the cache, and clears the session when the URL changes. Stack.Protected in _layout.tsx uses three mutually-exclusive guards: !isApiConfigured→setup, configured+authed→tabs, configured+unauthed→login. URL validation enforces https:// only. Setup screen pre-fills from EXPO_PUBLIC_DOMAIN env var (backward compat).
+
 ## Alert.alert & expo-haptics are broken on react-native-web (the canvas web preview)
 `Alert.alert` is a silent no-op on react-native-web and `expo-haptics` can throw — so any button whose action lives inside `Alert.alert` (e.g. a logout confirm) appears "not working" when tested in the web preview, even though it works on a real device.
 - **How to apply:** use cross-platform helpers: web → `globalThis.confirm` / `globalThis.alert` (default-deny when unavailable), native → `Alert.alert` (wrap the confirm in a Promise, and resolve `false` in `onDismiss`). Guard haptics to native only + `.catch(()=>{})`.

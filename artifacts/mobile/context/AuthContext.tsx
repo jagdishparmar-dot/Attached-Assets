@@ -1,8 +1,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { Platform } from "react-native";
 
-export type StaffRole = "driver" | "picker" | "sorter" | "loader" | "supervisor" | "security" | "house_keeper";
+export type StaffRole =
+  | "driver"
+  | "picker"
+  | "sorter"
+  | "loader"
+  | "supervisor"
+  | "security"
+  | "house_keeper";
 
 export interface StaffMember {
   id: number;
@@ -33,19 +40,34 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  apiUrl: string | null;
+  isApiConfigured: boolean;
   login: (phone: string, password: string) => Promise<LoginResult>;
   logout: () => Promise<void>;
   refreshStaff: (updated: Partial<StaffMember>) => void;
+  setApiUrl: (url: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
 const SESSION_KEY = "@coldverse_session_v3";
+const API_URL_KEY = "@coldverse_api_url";
+
+// Module-level cache so getApiBase() stays synchronous for call-sites outside
+// React (e.g. fetch helpers). Set during AuthProvider init and on every setApiUrl.
+let _apiUrlCache: string | null = null;
 
 export function getApiBase(): string {
   if (Platform.OS !== "web") {
+    if (_apiUrlCache) return _apiUrlCache;
+    // Fallback: env var baked at build time (backward-compat for builds that
+    // ship with EXPO_PUBLIC_DOMAIN; the setup screen will persist it properly
+    // on first launch).
     const domain = process.env.EXPO_PUBLIC_DOMAIN;
     if (domain) return `https://${domain}`;
+    return "";
   }
+  // Web preview uses relative URLs through the shared proxy.
   return "";
 }
 
@@ -53,42 +75,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [staff, setStaff] = useState<StaffMember | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [apiUrl, setApiUrlState] = useState<string | null>(null);
+
+  // Web always has relative URLs available — no setup needed.
+  const isApiConfigured = Platform.OS === "web" || !!apiUrl;
 
   useEffect(() => {
-    checkSession();
+    init();
   }, []);
 
-  const checkSession = async () => {
+  const init = async () => {
     try {
-      const raw = await AsyncStorage.getItem(SESSION_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as { staff: StaffMember; token: string };
-        // Guard against stale/malformed sessions from older builds: a session
-        // missing core fields would wedge the app into a broken tab state.
-        if (
-          parsed?.staff &&
-          typeof parsed.staff.id === "number" &&
-          parsed.staff.role &&
-          typeof parsed.token === "string" &&
-          parsed.token.length > 0
-        ) {
-          setStaff(parsed.staff);
-          setToken(parsed.token);
-        } else {
+      const [storedUrl, raw] = await Promise.all([
+        AsyncStorage.getItem(API_URL_KEY),
+        AsyncStorage.getItem(SESSION_KEY),
+      ]);
+
+      if (storedUrl) {
+        _apiUrlCache = storedUrl;
+        setApiUrlState(storedUrl);
+      }
+
+      // Only restore the session if the API URL is already configured; otherwise
+      // the session tokens would be useless (no server to talk to) and the user
+      // must go through setup → login.
+      if (storedUrl && raw) {
+        try {
+          const parsed = JSON.parse(raw) as { staff: StaffMember; token: string };
+          if (
+            parsed?.staff &&
+            typeof parsed.staff.id === "number" &&
+            parsed.staff.role &&
+            typeof parsed.token === "string" &&
+            parsed.token.length > 0
+          ) {
+            setStaff(parsed.staff);
+            setToken(parsed.token);
+          } else {
+            await AsyncStorage.removeItem(SESSION_KEY);
+          }
+        } catch {
           await AsyncStorage.removeItem(SESSION_KEY);
         }
       }
     } catch {
-      await AsyncStorage.removeItem(SESSION_KEY);
+      // AsyncStorage unavailable — proceed unauthenticated and unconfigured.
     } finally {
       setIsLoading(false);
     }
   };
 
+  const setApiUrl = async (url: string) => {
+    const clean = url.trim().replace(/\/+$/, ""); // strip trailing slashes
+    await AsyncStorage.setItem(API_URL_KEY, clean);
+    _apiUrlCache = clean;
+    // If the URL changed (not initial setup), clear the cached session so stale
+    // auth tokens from the old backend are not sent to the new one.
+    if (apiUrl && apiUrl !== clean) {
+      try {
+        await AsyncStorage.removeItem(SESSION_KEY);
+      } catch {
+        // ignore storage errors
+      }
+      setStaff(null);
+      setToken(null);
+    }
+    setApiUrlState(clean);
+  };
+
   const login = async (phone: string, password: string): Promise<LoginResult> => {
     const base = getApiBase();
-    // Web uses relative URLs (empty base) via the shared proxy; only a native
-    // build with no EXPO_PUBLIC_DOMAIN is genuinely misconfigured.
     if (Platform.OS !== "web" && !base) {
       return { ok: false, errorType: "misconfigured" };
     }
@@ -100,9 +156,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       if (!resp.ok) {
         const isAuthFailure = resp.status === 401 || resp.status === 403;
-        return { ok: false, errorType: isAuthFailure ? "invalid_credentials" : "network" };
+        return {
+          ok: false,
+          errorType: isAuthFailure ? "invalid_credentials" : "network",
+        };
       }
-      const data = await resp.json() as { staff: StaffMember; token: string };
+      const data = (await resp.json()) as { staff: StaffMember; token: string };
       await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(data));
       setStaff(data.staff);
       setToken(data.token);
@@ -113,19 +172,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    // Clear storage first, then auth state. Navigation is handled declaratively
-    // by <Stack.Protected guard={isAuthenticated}> in app/_layout.tsx — issuing
-    // an imperative router.replace here races that guard and can be dropped
-    // (the /login route isn't mounted until isAuthenticated flips), which made
-    // the logout button appear to do nothing on device.
     try {
       await AsyncStorage.removeItem(SESSION_KEY);
     } catch {
-      // Even if clearing storage fails, still drop the in-memory session so the
-      // guard redirects to login; the stale entry is re-validated on next load.
+      // ignore storage errors on logout
     }
     setStaff(null);
     setToken(null);
+    // Declarative Stack.Protected guard in _layout.tsx handles the redirect to login.
   };
 
   const refreshStaff = (updated: Partial<StaffMember>) => {
@@ -142,9 +196,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         isLoading,
         isAuthenticated: !!staff,
+        apiUrl,
+        isApiConfigured,
         login,
         logout,
         refreshStaff,
+        setApiUrl,
       }}
     >
       {children}
