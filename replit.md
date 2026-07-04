@@ -34,6 +34,8 @@ docker compose up -d --build
 
 After the first successful deploy, set `RUN_DB_MIGRATION=false` and `RUN_DB_SEED=false` in `.env`.
 
+**Coolify:** use `DATABASE_URL` without `?schema=public` if possible (the app strips it automatically). Set `COOKIE_SECURE=true` when using HTTPS at `compass-dms.intoship.cloud`.
+
 - App: http://your-vps/admin/
 - API health: http://your-vps/api/healthz
 - Set `COOKIE_SECURE=true` in `.env` when using HTTPS

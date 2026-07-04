@@ -10,7 +10,7 @@ wait_for_db() {
   echo "Waiting for database..."
   i=1
   while [ "$i" -le 30 ]; do
-    if node -e "
+    if node --import /app/load-env.mjs -e "
       const { Client } = require('pg');
       const client = new Client({ connectionString: process.env.DATABASE_URL });
       client.connect()
@@ -31,7 +31,7 @@ wait_for_db() {
 
 run_db_migration() {
   echo "Applying database schema (drizzle push)..."
-  node /app/node_modules/drizzle-kit/bin.cjs push --config /app/lib/db/drizzle.config.ts
+  node --import /app/load-env.mjs /app/node_modules/drizzle-kit/bin.cjs push --config /app/lib/db/drizzle.config.ts
 }
 
 run_db_seed() {

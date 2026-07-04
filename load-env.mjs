@@ -20,6 +20,19 @@ if (envPath) {
   config({ path: envPath });
 }
 
+// Coolify / Prisma-style URLs may include ?schema=public — node-pg does not accept that param
+if (process.env.DATABASE_URL) {
+  try {
+    const url = new URL(process.env.DATABASE_URL);
+    if (url.searchParams.has("schema")) {
+      url.searchParams.delete("schema");
+      process.env.DATABASE_URL = url.toString();
+    }
+  } catch {
+    // keep original value if parsing fails
+  }
+}
+
 if (!process.env.PORT && process.env.API_PORT) {
   process.env.PORT = process.env.API_PORT;
 }
