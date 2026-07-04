@@ -1,6 +1,8 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import fs from "node:fs";
+import path from "node:path";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
@@ -34,5 +36,29 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+function resolveAdminStaticDir(): string | null {
+  const configured = process.env.ADMIN_STATIC_DIR;
+  if (configured && fs.existsSync(configured)) {
+    return configured;
+  }
+
+  const candidate = path.resolve(process.cwd(), "artifacts/admin/dist/public");
+  return fs.existsSync(candidate) ? candidate : null;
+}
+
+const adminStaticDir = resolveAdminStaticDir();
+if (adminStaticDir) {
+  logger.info({ adminStaticDir }, "Serving admin panel static files");
+
+  app.get("/", (_req, res) => {
+    res.redirect("/admin/");
+  });
+
+  app.use("/admin", express.static(adminStaticDir));
+  app.use("/admin", (_req, res) => {
+    res.sendFile(path.join(adminStaticDir, "index.html"));
+  });
+}
 
 export default app;

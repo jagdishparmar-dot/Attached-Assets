@@ -42,16 +42,4 @@ if [ "$RUN_DB_SEED" = "true" ]; then
   run_db_seed
 fi
 
-node --import /app/load-env.mjs --enable-source-maps /app/artifacts/api-server/dist/index.mjs &
-API_PID=$!
-
-trap 'kill -TERM "$API_PID" 2>/dev/null; wait "$API_PID" 2>/dev/null' TERM INT
-
-for _ in $(seq 1 30); do
-  if curl -sf "http://127.0.0.1:${PORT:-8080}/api/healthz" >/dev/null; then
-    break
-  fi
-  sleep 1
-done
-
-exec nginx -g 'daemon off;'
+exec node --import /app/load-env.mjs --enable-source-maps /app/artifacts/api-server/dist/index.mjs
