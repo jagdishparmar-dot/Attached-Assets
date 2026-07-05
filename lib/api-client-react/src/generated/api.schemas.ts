@@ -631,6 +631,24 @@ export interface StaffAuthResult {
   token: string;
 }
 
+export interface AdminLoginInput {
+  phone: string;
+  password: string;
+}
+
+export interface AdminUser {
+  id: number;
+  name: string;
+  employeeId: string;
+  role: string;
+  phone: string;
+  hub: string;
+}
+
+export interface AdminAuthResult {
+  admin: AdminUser;
+}
+
 export type AttendanceEntryStatus = typeof AttendanceEntryStatus[keyof typeof AttendanceEntryStatus];
 
 

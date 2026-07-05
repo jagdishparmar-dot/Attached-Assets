@@ -1,3 +1,4 @@
+import "../../load-env.mjs";
 import { db } from "@workspace/db";
 import { staffTable, hubsTable } from "@workspace/db/schema";
 
