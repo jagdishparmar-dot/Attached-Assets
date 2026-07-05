@@ -2,7 +2,7 @@
   "expo": {
     "name": "Coldverse",
     "slug": "coldverse",
-    "owner": "ayersh009",
+    "owner": "jayant86",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -56,11 +56,8 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {
-        "origin": "https://replit.com/"
-      },
       "eas": {
-        "projectId": "9b606c44-5cfd-430a-b855-cfbac33885f7"
+        "projectId": "4b49d539-3d84-4bcf-a382-66285f0886df"
       }
     }
   }

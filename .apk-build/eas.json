@@ -7,31 +7,20 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "prebuildCommand": "npx expo prebuild --clean",
-      "node": "24.15.0",
       "android": {
         "buildType": "apk"
       }
     },
     "preview": {
       "distribution": "internal",
-      "prebuildCommand": "npx expo prebuild --clean",
-      "node": "24.15.0",
-      "env": {
-        "EXPO_PUBLIC_DOMAIN": "compass-dms.intoship.cloud"
-      },
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
       "autoIncrement": true,
-      "prebuildCommand": "npx expo prebuild --clean",
-      "node": "24.15.0",
+      "credentialsSource": "local",
       "environment": "production",
-      "env": {
-        "EXPO_PUBLIC_DOMAIN": "compass-dms.intoship.cloud"
-      },
       "android": {
         "buildType": "app-bundle"
       }

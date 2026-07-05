@@ -1,0 +1,11 @@
+# Let EAS run a fresh prebuild on Linux (avoids Windows-local android/ artifacts)
+android/
+ios/
+**/android/local.properties
+# Replit static web bundle — not used for native APK
+static-build/
+
+# Local / CI noise
+**/.gradle/
+**/build/
+log/
