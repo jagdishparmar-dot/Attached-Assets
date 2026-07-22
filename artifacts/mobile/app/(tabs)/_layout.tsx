@@ -5,10 +5,32 @@ import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { SymbolView } from "expo-symbols";
 import { MaterialIcons } from "@expo/vector-icons";
 import React, { useEffect } from "react";
-import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type AccessibilityState,
+  type GestureResponderEvent,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
+
+type MaterialTabButtonProps = {
+  children: React.ReactNode;
+  onPress?: (e: GestureResponderEvent) => void;
+  onLongPress?: (e: GestureResponderEvent) => void;
+  accessibilityState?: AccessibilityState;
+  accessibilityLabel?: string;
+  testID?: string;
+  style?: StyleProp<ViewStyle> | ((state: { pressed: boolean }) => StyleProp<ViewStyle>);
+};
 
 function NativeTabLayout({ isDriver }: { isDriver: boolean }) {
   return (
@@ -23,12 +45,6 @@ function NativeTabLayout({ isDriver }: { isDriver: boolean }) {
         <NativeTabs.Trigger name="deliveries">
           <Icon sf={{ default: "shippingbox", selected: "shippingbox.fill" }} />
           <Label>Deliveries</Label>
-        </NativeTabs.Trigger>
-      )}
-      {isDriver && (
-        <NativeTabs.Trigger name="route">
-          <Icon sf={{ default: "map", selected: "map.fill" }} />
-          <Label>Route</Label>
         </NativeTabs.Trigger>
       )}
       <NativeTabs.Trigger name="attendance">
@@ -47,36 +63,140 @@ function NativeTabLayout({ isDriver }: { isDriver: boolean }) {
   );
 }
 
+/** Material-style press target with Android ripple. */
+function MaterialTabButton({
+  children,
+  onPress,
+  onLongPress,
+  accessibilityState,
+  accessibilityLabel,
+  testID,
+  style,
+}: MaterialTabButtonProps) {
+  return (
+    <Pressable
+      accessibilityRole="tab"
+      accessibilityState={accessibilityState}
+      accessibilityLabel={accessibilityLabel}
+      testID={testID}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      android_ripple={{
+        color: "rgba(46, 107, 230, 0.16)",
+        borderless: true,
+        radius: 36,
+      }}
+      style={({ pressed }) => [
+        styles.tabButton,
+        typeof style === "function" ? style({ pressed }) : style,
+        pressed && Platform.OS !== "android" && { opacity: 0.75 },
+      ]}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
 function ClassicTabLayout({ isDriver }: { isDriver: boolean }) {
   const colors = useColors();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
+  const bottomInset = isWeb ? 20 : Math.max(insets.bottom, 10);
 
-  const tabIcon = (name: keyof typeof MaterialIcons.glyphMap, sfSymbol: string, color: string) => {
-    if (isIOS) return <SymbolView name={sfSymbol as any} tintColor={color} size={24} />;
-    return <MaterialIcons name={name} size={24} color={color} />;
+  const activeColor = colors.secondary;
+  const inactiveColor = colors.mutedForeground;
+  const activeIndicator = isDark ? "rgba(91, 141, 239, 0.24)" : "rgba(46, 107, 230, 0.14)";
+  const surface = colors.card;
+
+  const renderIcon = (
+    name: keyof typeof MaterialIcons.glyphMap,
+    nameFocused: keyof typeof MaterialIcons.glyphMap,
+    sfSymbol: string,
+    sfFilled: string,
+    color: string,
+    focused: boolean,
+  ) => {
+    const icon =
+      isIOS ? (
+        <SymbolView
+          name={(focused ? sfFilled : sfSymbol) as any}
+          tintColor={color}
+          size={22}
+        />
+      ) : (
+        <MaterialIcons
+          name={focused ? nameFocused : name}
+          size={22}
+          color={color}
+        />
+      );
+
+    return (
+      <View
+        style={[
+          styles.indicator,
+          focused && { backgroundColor: activeIndicator },
+        ]}
+      >
+        {icon}
+      </View>
+    );
   };
+
+  const renderLabel = (label: string, color: string, focused: boolean) => (
+    <Text
+      numberOfLines={1}
+      style={[styles.tabLabel, { color }, focused && styles.tabLabelActive]}
+    >
+      {label}
+    </Text>
+  );
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.secondary,
-        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarActiveTintColor: activeColor,
+        tabBarInactiveTintColor: inactiveColor,
         headerShown: false,
+        tabBarHideOnKeyboard: true,
+        tabBarButton: (props) => (
+          <MaterialTabButton
+            children={props.children}
+            onPress={props.onPress ?? undefined}
+            onLongPress={props.onLongPress ?? undefined}
+            accessibilityState={props.accessibilityState}
+            accessibilityLabel={props.accessibilityLabel}
+            testID={props.testID}
+            style={props.style}
+          />
+        ),
+        tabBarItemStyle: styles.tabItem,
+        tabBarIconStyle: styles.tabIcon,
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: isIOS ? "transparent" : colors.card,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
+          backgroundColor: isIOS ? "transparent" : surface,
+          borderTopWidth: 0,
           elevation: 0,
-          ...(isWeb ? { height: 84 } : {}),
-        },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontFamily: "Inter_600SemiBold",
-          marginBottom: isIOS ? 0 : 4,
+          height: 56 + bottomInset,
+          paddingTop: 8,
+          paddingBottom: bottomInset,
+          ...Platform.select({
+            ios: {
+              shadowColor: "#0A1628",
+              shadowOffset: { width: 0, height: -1 },
+              shadowOpacity: isDark ? 0.4 : 0.1,
+              shadowRadius: 10,
+            },
+            android: {
+              elevation: 10,
+            },
+            default: {
+              borderTopWidth: StyleSheet.hairlineWidth,
+              borderTopColor: colors.border,
+            },
+          }),
         },
         tabBarBackground: () =>
           isIOS ? (
@@ -85,9 +205,26 @@ function ClassicTabLayout({ isDriver }: { isDriver: boolean }) {
               tint={isDark ? "dark" : "light"}
               style={StyleSheet.absoluteFill}
             />
-          ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.card }]} />
-          ) : null,
+          ) : (
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: surface,
+                  borderTopLeftRadius: 18,
+                  borderTopRightRadius: 18,
+                  borderTopWidth: StyleSheet.hairlineWidth,
+                  borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(10,22,40,0.06)",
+                  ...Platform.select({
+                    android: {
+                      elevation: 10,
+                    },
+                    default: {},
+                  }),
+                },
+              ]}
+            />
+          ),
       }}
     >
       <Tabs.Screen
@@ -95,7 +232,9 @@ function ClassicTabLayout({ isDriver }: { isDriver: boolean }) {
         options={{
           title: "Dashboard",
           href: isDriver ? undefined : null,
-          tabBarIcon: ({ color }) => tabIcon("dashboard", "house", color),
+          tabBarLabel: ({ color, focused }) => renderLabel("Dashboard", color, focused),
+          tabBarIcon: ({ color, focused }) =>
+            renderIcon("dashboard", "space-dashboard", "house", "house.fill", color, focused),
         }}
       />
       <Tabs.Screen
@@ -103,36 +242,57 @@ function ClassicTabLayout({ isDriver }: { isDriver: boolean }) {
         options={{
           title: "Deliveries",
           href: isDriver ? undefined : null,
-          tabBarIcon: ({ color }) => tabIcon("local-shipping", "shippingbox", color),
+          tabBarLabel: ({ color, focused }) => renderLabel("Deliveries", color, focused),
+          tabBarIcon: ({ color, focused }) =>
+            renderIcon(
+              "local-shipping",
+              "local-shipping",
+              "shippingbox",
+              "shippingbox.fill",
+              color,
+              focused,
+            ),
         }}
       />
       <Tabs.Screen
         name="route"
         options={{
           title: "Route",
-          href: isDriver ? undefined : null,
-          tabBarIcon: ({ color }) => tabIcon("map", "map", color),
+          href: null,
         }}
       />
       <Tabs.Screen
         name="attendance"
         options={{
           title: "Attendance",
-          tabBarIcon: ({ color }) => tabIcon("person-pin-circle", "person.badge.clock", color),
+          tabBarLabel: ({ color, focused }) => renderLabel("Attendance", color, focused),
+          tabBarIcon: ({ color, focused }) =>
+            renderIcon(
+              "event-available",
+              "event-available",
+              "person.badge.clock",
+              "person.badge.clock.fill",
+              color,
+              focused,
+            ),
         }}
       />
       <Tabs.Screen
         name="track"
         options={{
           title: "Track",
-          tabBarIcon: ({ color }) => tabIcon("gps-fixed", "location", color),
+          tabBarLabel: ({ color, focused }) => renderLabel("Track", color, focused),
+          tabBarIcon: ({ color, focused }) =>
+            renderIcon("my-location", "gps-fixed", "location", "location.fill", color, focused),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) => tabIcon("person", "person", color),
+          tabBarLabel: ({ color, focused }) => renderLabel("Profile", color, focused),
+          tabBarIcon: ({ color, focused }) =>
+            renderIcon("person-outline", "person", "person", "person.fill", color, focused),
         }}
       />
     </Tabs>
@@ -144,14 +304,13 @@ export default function TabLayout() {
   const pathname = usePathname();
   const isDriver = staff?.role === "driver";
 
-  // Redirect non-drivers away from driver-only tabs
   useEffect(() => {
     if (isLoading || !staff || isDriver) return;
     const allowed = ["/attendance", "/track", "/profile"];
     if (!allowed.some((p) => pathname.endsWith(p))) {
       router.replace("/(tabs)/attendance");
     }
-  }, [isDriver, isLoading, staff, pathname]);
+  }, [isDriver, isLoading, staff?.id, staff?.role, pathname]);
 
   let useNativeTabs = false;
   if (Platform.OS === "ios") {
@@ -167,4 +326,34 @@ export default function TabLayout() {
   return <ClassicTabLayout isDriver={isDriver} />;
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  tabButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabItem: {
+    paddingVertical: 0,
+  },
+  tabIcon: {
+    marginTop: 0,
+  },
+  indicator: {
+    minWidth: 56,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 18,
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    marginTop: 2,
+    letterSpacing: 0.15,
+    includeFontPadding: false,
+  },
+  tabLabelActive: {
+    fontFamily: "Inter_600SemiBold",
+  },
+});

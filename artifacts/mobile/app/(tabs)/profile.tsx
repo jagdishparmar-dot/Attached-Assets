@@ -5,16 +5,17 @@ import {
   Alert,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAuth } from "@/context/AuthContext";
+import { isValidHubUrl, useAuth } from "@/context/AuthContext";
+import { ThemePreference, useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -38,10 +39,12 @@ function initials(name: string | null | undefined): string {
     .toUpperCase();
 }
 
-// ─── Cross-platform alert helpers ────────────────────────────────────────────
-// Alert.alert and expo-haptics are no-ops (or throw) on react-native-web, which
-// silently broke the logout dialog + menu buttons in the web preview. These
-// helpers fall back to the DOM confirm/alert on web and stay native elsewhere.
+function formatJoinDate(value: string | null | undefined) {
+  if (!value) return "—";
+  const d = new Date(value.includes("T") ? value : `${value}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
 
 function safeHaptic() {
   if (Platform.OS === "web") return;
@@ -50,15 +53,11 @@ function safeHaptic() {
       .impactAsync(require("expo-haptics").ImpactFeedbackStyle.Medium)
       .catch(() => {});
   } catch {
-    // haptics unavailable on this device — ignore
+    // ignore
   }
 }
 
-function confirmAsync(
-  title: string,
-  message: string,
-  confirmLabel: string,
-): Promise<boolean> {
+function confirmAsync(title: string, message: string, confirmLabel: string): Promise<boolean> {
   if (Platform.OS === "web") {
     const fn = (globalThis as { confirm?: (m?: string) => boolean }).confirm;
     return Promise.resolve(fn ? fn(`${title}\n\n${message}`) : false);
@@ -69,11 +68,7 @@ function confirmAsync(
       message,
       [
         { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
-        {
-          text: confirmLabel,
-          style: "destructive",
-          onPress: () => resolve(true),
-        },
+        { text: confirmLabel, style: "destructive", onPress: () => resolve(true) },
       ],
       { cancelable: true, onDismiss: () => resolve(false) },
     );
@@ -82,82 +77,105 @@ function confirmAsync(
 
 function showInfo(title: string, message: string) {
   if (Platform.OS === "web") {
-    (globalThis as { alert?: (m?: string) => void }).alert?.(
-      `${title}\n\n${message}`,
-    );
+    (globalThis as { alert?: (m?: string) => void }).alert?.(`${title}\n\n${message}`);
     return;
   }
   Alert.alert(title, message);
 }
 
-function isValidUrl(url: string): boolean {
-  return /^https:\/\/.+\..+/.test(url.trim());
-}
-
-// ─── Sub-components ──────────────────────────────────────────────────────────
-
-interface ProfileRowProps {
+function InfoRow({
+  label,
+  value,
+  icon,
+  last,
+}: {
   label: string;
   value: string | null | undefined;
   icon: keyof typeof MaterialIcons.glyphMap;
-}
-
-function ProfileRow({ label, value, icon }: ProfileRowProps) {
+  last?: boolean;
+}) {
   const colors = useColors();
   return (
-    <View style={[styles.profileRow, { borderBottomColor: colors.border }]}>
+    <View
+      style={[
+        styles.infoRow,
+        !last && { borderBottomWidth: 1, borderBottomColor: colors.border },
+      ]}
+    >
       <View style={[styles.rowIcon, { backgroundColor: colors.muted }]}>
         <MaterialIcons name={icon} size={16} color={colors.secondary} />
       </View>
-      <View style={styles.rowContent}>
-        <Text style={[styles.rowLabel, { color: colors.mutedForeground }]}>
-          {label}
-        </Text>
-        <Text style={[styles.rowValue, { color: colors.foreground }]}>
-          {value ?? "—"}
-        </Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.rowLabel, { color: colors.mutedForeground }]}>{label}</Text>
+        <Text style={[styles.rowValue, { color: colors.foreground }]}>{value ?? "—"}</Text>
       </View>
     </View>
   );
 }
 
-interface MenuItemProps {
+function MenuRow({
+  label,
+  icon,
+  onPress,
+  value,
+  danger,
+  last,
+}: {
   label: string;
   icon: keyof typeof MaterialIcons.glyphMap;
-  color?: string;
   onPress: () => void;
-}
-
-function MenuItem({ label, icon, color, onPress }: MenuItemProps) {
+  value?: string;
+  danger?: boolean;
+  last?: boolean;
+}) {
   const colors = useColors();
+  const tint = danger ? colors.destructive : colors.secondary;
   return (
-    <TouchableOpacity
-      style={[styles.menuItem, { borderBottomColor: colors.border }]}
+    <Pressable
+      style={[
+        styles.menuRow,
+        !last && { borderBottomWidth: 1, borderBottomColor: colors.border },
+      ]}
       onPress={onPress}
-      activeOpacity={0.7}
     >
-      <View style={[styles.menuIcon, { backgroundColor: colors.muted }]}>
-        <MaterialIcons name={icon} size={18} color={color ?? colors.secondary} />
+      <View
+        style={[
+          styles.rowIcon,
+          { backgroundColor: danger ? colors.destructiveLight : colors.muted },
+        ]}
+      >
+        <MaterialIcons name={icon} size={16} color={tint} />
       </View>
-      <Text style={[styles.menuLabel, { color: color ?? colors.foreground }]}>
-        {label}
-      </Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.menuLabel, { color: danger ? colors.destructive : colors.foreground }]}>
+          {label}
+        </Text>
+        {!!value && (
+          <Text style={[styles.menuValue, { color: colors.mutedForeground }]} numberOfLines={1}>
+            {value}
+          </Text>
+        )}
+      </View>
       <MaterialIcons name="chevron-right" size={20} color={colors.border} />
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
-// ─── Main screen ─────────────────────────────────────────────────────────────
+const THEME_OPTIONS: { key: ThemePreference; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
+  { key: "system", label: "System", icon: "settings-brightness" },
+  { key: "light", label: "Light", icon: "light-mode" },
+  { key: "dark", label: "Dark", icon: "dark-mode" },
+];
 
 export default function ProfileScreen() {
   const colors = useColors();
+  const { preference, setPreference, resolved } = useTheme();
   const insets = useSafeAreaInsets();
   const { staff, isLoading, logout, apiUrl, setApiUrl } = useAuth();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const botPad = Platform.OS === "web" ? 34 : 0;
 
-  // Server URL change modal state
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [urlError, setUrlError] = useState("");
@@ -165,14 +183,8 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     safeHaptic();
-    const confirmed = await confirmAsync(
-      "Logout",
-      "Are you sure you want to logout?",
-      "Logout",
-    );
-    if (confirmed) {
-      await logout();
-    }
+    const confirmed = await confirmAsync("Logout", "Are you sure you want to logout?", "Logout");
+    if (confirmed) await logout();
   };
 
   const openUrlModal = () => {
@@ -187,8 +199,8 @@ export default function ProfileScreen() {
       setUrlError("Please enter a URL.");
       return;
     }
-    if (!isValidUrl(trimmed)) {
-      setUrlError('URL must start with "https://" (HTTP is not supported for security).');
+    if (!isValidHubUrl(trimmed)) {
+      setUrlError("Enter a valid Hub URL (https://… or http://localhost:8080 for local).");
       return;
     }
     setUrlError("");
@@ -210,14 +222,17 @@ export default function ProfileScreen() {
   if (isLoading || !staff) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.secondary} />
       </View>
     );
   }
 
+  const role = ROLE_LABELS[staff.role] ?? staff.role;
+  const shift =
+    staff.shiftStart && staff.shiftEnd ? `${staff.shiftStart} – ${staff.shiftEnd}` : null;
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      {/* ── Server URL change modal ── */}
       <Modal
         visible={showUrlModal}
         transparent
@@ -226,22 +241,15 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
-            <View style={styles.modalIconRow}>
-              <View style={[styles.modalIconCircle, { backgroundColor: colors.muted }]}>
-                <MaterialIcons name="device-hub" size={24} color={colors.primary} />
-              </View>
-            </View>
-            <Text style={[styles.modalTitle, { color: colors.foreground }]}>
-              Hub URL
-            </Text>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Hub URL</Text>
             <Text style={[styles.modalSubtitle, { color: colors.mutedForeground }]}>
-              Enter the new Hub connection URL
+              Connection address for your Coldverse hub
             </Text>
             <View
               style={[
                 styles.modalInputWrap,
                 {
-                  borderColor: urlError ? "#DC2626" : colors.border,
+                  borderColor: urlError ? colors.destructive : colors.border,
                   backgroundColor: colors.muted,
                 },
               ]}
@@ -254,225 +262,163 @@ export default function ProfileScreen() {
                   setUrlInput(t);
                   setUrlError("");
                 }}
-                placeholder="https://yourapp.replit.app"
+                placeholder="http://localhost:8080"
                 placeholderTextColor={colors.mutedForeground}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="url"
               />
             </View>
-            {urlError ? (
-              <Text style={styles.urlErrorText}>{urlError}</Text>
-            ) : null}
+            {!!urlError && <Text style={[styles.urlError, { color: colors.destructive }]}>{urlError}</Text>}
             <View style={styles.modalBtns}>
-              <TouchableOpacity
-                style={[
-                  styles.modalBtn,
-                  styles.modalCancelBtn,
-                  { borderColor: colors.border },
-                ]}
-                onPress={() => {
-                  setShowUrlModal(false);
-                  setUrlError("");
-                }}
+              <Pressable
+                style={[styles.modalBtn, { borderColor: colors.border, borderWidth: 1 }]}
+                onPress={() => setShowUrlModal(false)}
                 disabled={urlSaving}
               >
-                <Text style={[styles.modalBtnText, { color: colors.foreground }]}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalBtn,
-                  styles.modalSaveBtn,
-                  { backgroundColor: colors.primary },
-                  urlSaving && { opacity: 0.7 },
-                ]}
+                <Text style={[styles.modalBtnText, { color: colors.foreground }]}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalBtn, { backgroundColor: colors.primary, opacity: urlSaving ? 0.7 : 1 }]}
                 onPress={handleSaveUrl}
                 disabled={urlSaving}
               >
                 {urlSaving ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={[styles.modalBtnText, { color: "#fff" }]}>
-                    Save
-                  </Text>
+                  <Text style={[styles.modalBtnText, { color: "#fff" }]}>Save</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* ── Header ── */}
-      <View
-        style={[
-          styles.header,
-          { backgroundColor: colors.primary, paddingTop: topPad + 16 },
-        ]}
-      >
-        <View style={styles.avatarRow}>
-          <View style={[styles.avatar, { backgroundColor: "#2E6BE6" }]}>
-            <Text style={styles.avatarText}>{initials(staff.name)}</Text>
-          </View>
-          <View style={styles.avatarInfo}>
-            <Text style={styles.staffName}>{staff.name ?? "—"}</Text>
-            <Text style={styles.employeeId}>{staff.employeeId ?? "—"}</Text>
-            <View style={styles.activeBadge}>
-              <View style={styles.greenDot} />
-              <Text style={styles.activeText}>
-                {ROLE_LABELS[staff.role] ?? staff.role ?? "Staff"}
-              </Text>
-            </View>
-          </View>
+      <View style={[styles.header, { backgroundColor: colors.primary, paddingTop: topPad + 12 }]}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Profile</Text>
+          <Text style={styles.headerMeta}>{role}</Text>
         </View>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: botPad + 100 }}
+        contentContainerStyle={{ paddingBottom: botPad + 100, paddingTop: 16 }}
       >
-        {/* Staff Information */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Staff Information
-          </Text>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <ProfileRow
-              label="Employee ID"
-              value={staff.employeeId}
-              icon="badge"
-            />
-            <ProfileRow label="Mobile" value={staff.phone} icon="phone" />
-            <ProfileRow
-              label="Role"
-              value={ROLE_LABELS[staff.role] ?? staff.role}
-              icon="work"
-            />
-            <ProfileRow
-              label="Joining Date"
-              value={staff.joiningDate}
-              icon="calendar-today"
-            />
-          </View>
-        </View>
-
-        {/* Driver Details (drivers only) */}
-        {staff.role === "driver" &&
-          (staff.licenseNumber || staff.licenseExpiry) && (
-            <View style={styles.section}>
-              <Text
-                style={[styles.sectionTitle, { color: colors.foreground }]}
-              >
-                Driver Details
+        <View style={styles.pad}>
+          <View style={[styles.identityCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.avatar, { backgroundColor: colors.secondary }]}>
+              <Text style={styles.avatarText}>{initials(staff.name)}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>
+                {staff.name ?? "—"}
               </Text>
-              <View
-                style={[
-                  styles.card,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                ]}
-              >
-                <ProfileRow
-                  label="License No."
-                  value={staff.licenseNumber}
-                  icon="card-membership"
-                />
-                <ProfileRow
-                  label="License Expiry"
-                  value={staff.licenseExpiry}
-                  icon="event"
-                />
+              <Text style={[styles.meta, { color: colors.mutedForeground }]} numberOfLines={1}>
+                {staff.employeeId ?? "—"} · {staff.hub ?? "Hub"}
+              </Text>
+              <View style={styles.badgeRow}>
+                <View style={[styles.badge, { backgroundColor: colors.successLight }]}>
+                  <View style={[styles.dot, { backgroundColor: colors.success }]} />
+                  <Text style={[styles.badgeText, { color: colors.success }]}>
+                    {staff.status === "active" ? "Active" : staff.status}
+                  </Text>
+                </View>
+                <View style={[styles.badge, { backgroundColor: colors.inTransitLight }]}>
+                  <Text style={[styles.badgeText, { color: colors.secondary }]}>{role}</Text>
+                </View>
               </View>
             </View>
-          )}
-
-        {/* Hub & Shift */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Hub & Shift
-          </Text>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <ProfileRow label="Hub" value={staff.hub} icon="warehouse" />
-            <ProfileRow
-              label="Shift"
-              value={
-                staff.shiftStart && staff.shiftEnd
-                  ? `${staff.shiftStart} – ${staff.shiftEnd}`
-                  : null
-              }
-              icon="schedule"
-            />
           </View>
         </View>
 
-        {/* Settings & Support */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Settings & Support
-          </Text>
-          <View
-            style={[
-              styles.card,
-              { backgroundColor: colors.card, borderColor: colors.border },
-            ]}
-          >
-            <MenuItem
-              label="Hub URL"
-              icon="device-hub"
-              onPress={openUrlModal}
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Details</Text>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <InfoRow label="Mobile" value={staff.phone} icon="phone" />
+            <InfoRow label="Employee ID" value={staff.employeeId} icon="badge" />
+            <InfoRow label="Hub" value={staff.hub} icon="warehouse" />
+            <InfoRow label="Shift" value={shift} icon="schedule" />
+            <InfoRow
+              label="Joined"
+              value={formatJoinDate(staff.joiningDate)}
+              icon="calendar-today"
+              last={staff.role !== "driver"}
             />
-            <MenuItem
-              label="Change Password"
+            {staff.role === "driver" && (
+              <>
+                <InfoRow label="License" value={staff.licenseNumber} icon="card-membership" />
+                <InfoRow
+                  label="License expiry"
+                  value={formatJoinDate(staff.licenseExpiry)}
+                  icon="event"
+                  last
+                />
+              </>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Appearance</Text>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.themeHint, { color: colors.mutedForeground }]}>
+              Theme · {resolved === "dark" ? "Dark" : "Light"}
+              {preference === "system" ? " (following system)" : ""}
+            </Text>
+            <View style={styles.themeRow}>
+              {THEME_OPTIONS.map((opt) => {
+                const active = preference === opt.key;
+                return (
+                  <Pressable
+                    key={opt.key}
+                    style={[
+                      styles.themeChip,
+                      {
+                        backgroundColor: active ? colors.secondary : colors.muted,
+                        borderColor: active ? colors.secondary : colors.border,
+                      },
+                    ]}
+                    onPress={() => void setPreference(opt.key)}
+                  >
+                    <MaterialIcons
+                      name={opt.icon}
+                      size={16}
+                      color={active ? "#FFFFFF" : colors.mutedForeground}
+                    />
+                    <Text
+                      style={[
+                        styles.themeChipText,
+                        { color: active ? "#FFFFFF" : colors.foreground },
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Settings</Text>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <MenuRow label="Hub URL" icon="device-hub" value={apiUrl ?? "Not set"} onPress={openUrlModal} />
+            <MenuRow
+              label="Change password"
               icon="lock"
+              onPress={() => showInfo("Change Password", "This feature will be available soon.")}
+            />
+            <MenuRow
+              label="Help & support"
+              icon="help-outline"
               onPress={() =>
-                showInfo(
-                  "Change Password",
-                  "This feature will be available soon.",
-                )
+                showInfo("Help & Support", "For any help, please contact your hub supervisor.")
               }
             />
-            <MenuItem
-              label="Language"
-              icon="language"
-              onPress={() =>
-                showInfo(
-                  "Language",
-                  "The app is currently available in English. More languages coming soon.",
-                )
-              }
-            />
-            <MenuItem
-              label="Notifications"
-              icon="notifications"
-              onPress={() =>
-                showInfo(
-                  "Notifications",
-                  "Notification settings will be available soon.",
-                )
-              }
-            />
-            <MenuItem
-              label="Help & Support"
-              icon="help"
-              onPress={() =>
-                showInfo(
-                  "Help & Support",
-                  "For any help, please contact your hub supervisor.",
-                )
-              }
-            />
-            <MenuItem
-              label="Terms & Policy"
+            <MenuRow
+              label="Terms & policy"
               icon="description"
               onPress={() =>
                 showInfo(
@@ -480,25 +426,23 @@ export default function ProfileScreen() {
                   "By using the Coldverse Staff App you agree to Coldverse Supply Chain's terms of service and privacy policy.",
                 )
               }
+              last
             />
           </View>
         </View>
 
-        {/* Logout */}
         <View style={styles.section}>
-          <TouchableOpacity
-            style={[styles.logoutBtn, { backgroundColor: "#FEE2E2" }]}
+          <Pressable
+            style={[styles.logoutBtn, { backgroundColor: colors.destructiveLight }]}
             onPress={handleLogout}
-            activeOpacity={0.8}
           >
-            <MaterialIcons name="logout" size={20} color="#DC2626" />
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
+            <MaterialIcons name="logout" size={18} color={colors.destructive} />
+            <Text style={[styles.logoutText, { color: colors.destructive }]}>Logout</Text>
+          </Pressable>
+          <Text style={[styles.version, { color: colors.mutedForeground }]}>
+            Coldverse Staff · v2.0.0
+          </Text>
         </View>
-
-        <Text style={[styles.version, { color: colors.mutedForeground }]}>
-          Coldverse Staff App v2.0.0
-        </Text>
       </ScrollView>
     </View>
   );
@@ -507,97 +451,111 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { paddingHorizontal: 20, paddingBottom: 24 },
-  avatarRow: { flexDirection: "row", alignItems: "center", gap: 16 },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
+  header: {
+    paddingHorizontal: 16,
+    paddingBottom: 14,
   },
-  avatarText: { color: "#fff", fontSize: 24, fontFamily: "Inter_700Bold" },
-  avatarInfo: { flex: 1 },
-  staffName: { color: "#fff", fontSize: 20, fontFamily: "Inter_700Bold" },
-  employeeId: {
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontFamily: "Inter_700Bold",
+  },
+  headerMeta: {
     color: "#8BAFC7",
     fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    marginTop: 2,
+    fontFamily: "Inter_600SemiBold",
   },
-  activeBadge: {
+  pad: { paddingHorizontal: 16 },
+  identityCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: { color: "#fff", fontSize: 20, fontFamily: "Inter_700Bold" },
+  name: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  meta: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
+  badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  badge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
   },
-  greenDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: "#22C55E",
-  },
-  activeText: {
-    color: "#22C55E",
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
-  section: { paddingHorizontal: 16, paddingTop: 20 },
-  sectionTitle: {
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-    marginBottom: 10,
-  },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  badgeText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  section: { paddingHorizontal: 16, paddingTop: 18 },
+  sectionTitle: { fontSize: 15, fontFamily: "Inter_700Bold", marginBottom: 10 },
   card: {
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-      },
-      android: { elevation: 1 },
-    }),
   },
-  profileRow: {
+  themeHint: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  themeRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+  themeChip: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  themeChipText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  infoRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    padding: 14,
-    borderBottomWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   rowIcon: {
     width: 32,
     height: 32,
-    borderRadius: 8,
-    justifyContent: "center",
+    borderRadius: 10,
     alignItems: "center",
+    justifyContent: "center",
   },
-  rowContent: { flex: 1 },
   rowLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
-  rowValue: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    marginTop: 1,
-  },
-  menuItem: {
+  rowValue: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginTop: 1 },
+  menuRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    padding: 14,
-    borderBottomWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  menuIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  menuLabel: { flex: 1, fontSize: 15, fontFamily: "Inter_500Medium" },
+  menuLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  menuValue: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
   logoutBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -606,87 +564,57 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
   },
-  logoutText: { color: "#DC2626", fontSize: 16, fontFamily: "Inter_700Bold" },
+  logoutText: { fontSize: 15, fontFamily: "Inter_700Bold" },
   version: {
     textAlign: "center",
     fontSize: 11,
     fontFamily: "Inter_400Regular",
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: 14,
   },
-  // ── URL Modal ──
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
-    alignItems: "center",
     paddingHorizontal: 24,
   },
   modalCard: {
-    width: "100%",
-    borderRadius: 20,
-    padding: 24,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 20,
-      },
-      android: { elevation: 10 },
-    }),
-  },
-  modalIconRow: { alignItems: "center", marginBottom: 12 },
-  modalIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
+    borderRadius: 18,
+    padding: 20,
   },
   modalTitle: {
     fontSize: 18,
     fontFamily: "Inter_700Bold",
     textAlign: "center",
-    marginBottom: 4,
   },
   modalSubtitle: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",
     textAlign: "center",
+    marginTop: 4,
     marginBottom: 16,
   },
   modalInputWrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 11,
-    marginBottom: 4,
   },
   modalInput: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
-  urlErrorText: {
-    color: "#DC2626",
+  urlError: {
     fontSize: 12,
     fontFamily: "Inter_500Medium",
-    marginBottom: 8,
-    marginTop: 2,
+    marginTop: 6,
   },
-  modalBtns: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 16,
-  },
+  modalBtns: { flexDirection: "row", gap: 10, marginTop: 16 },
   modalBtn: {
     flex: 1,
-    paddingVertical: 13,
+    paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  modalCancelBtn: { borderWidth: 1.5 },
-  modalSaveBtn: {},
   modalBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
 });

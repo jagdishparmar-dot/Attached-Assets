@@ -1,21 +1,24 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import { router } from "expo-router";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useApp } from "@/context/AppContext";
 import { getApiBase, useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
-import { useListDeliveries } from "@workspace/api-client-react";
 
 export default function RouteScreen() {
-  const { staff } = useAuth();
+  const { staff, token } = useAuth();
+  const { deliveries, refreshData } = useApp();
   const colors = useColors();
   const insets = useSafeAreaInsets();
 
@@ -23,17 +26,16 @@ export default function RouteScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const today = new Date().toISOString().slice(0, 10);
-  const driverId = staff?.driverId ?? undefined;
-  const { data: deliveries } = useListDeliveries({ date: today, assignedDriverId: driverId });
-
-  const myDeliveries = (deliveries ?? []).filter(
-    (d) =>
-      driverId !== undefined &&
-      d.assignedDriverId === driverId &&
-      d.status !== "delivered" &&
-      d.status !== "failed"
+  const myDeliveries = useMemo(
+    () =>
+      deliveries
+        .filter((d) => d.status !== "delivered" && d.status !== "failed")
+        .sort((a, b) => (a.sequence || 0) - (b.sequence || 0)),
+    [deliveries],
   );
+
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const botPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   const generatePlan = async () => {
     if (myDeliveries.length === 0) {
@@ -45,13 +47,19 @@ export default function RouteScreen() {
     setPlan(null);
     try {
       const base = getApiBase();
+      if (!base) {
+        setError("Hub URL is not configured.");
+        return;
+      }
       const addresses = myDeliveries.map(
-        (d) =>
-          `${d.deliveryAddress}${d.deliveryArea ? ", " + d.deliveryArea : ""}, ${d.deliveryCity}`
+        (d) => `${d.address}${d.area ? `, ${d.area}` : ""}, ${d.city}`,
       );
       const res = await fetch(`${base}/api/ai/route-plan`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ addresses, driverName: staff?.name }),
       });
       if (!res.ok) throw new Error("Server error");
@@ -65,166 +73,185 @@ export default function RouteScreen() {
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={[
-        styles.container,
-        { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 100 },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: colors.foreground }]}>
-            AI Route Plan
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            {myDeliveries.length} stop{myDeliveries.length !== 1 ? "s" : ""}{" "}
-            assigned today
-          </Text>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.primary, paddingTop: topPad + 12 }]}>
+        <View style={styles.headerRow}>
+          <Pressable
+            onPress={() => {
+              if (router.canGoBack()) router.back();
+              else router.replace("/(tabs)/deliveries");
+            }}
+            style={styles.backBtn}
+            hitSlop={10}
+            accessibilityLabel="Back to deliveries"
+          >
+            <MaterialIcons name="arrow-back" size={20} color="#fff" />
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Route</Text>
+            <Text style={styles.subtitle}>
+              {myDeliveries.length} stop{myDeliveries.length === 1 ? "" : "s"} today
+            </Text>
+          </View>
+          <Pressable
+            style={[styles.generateBtn, loading && styles.generateBtnDisabled]}
+            onPress={generatePlan}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <MaterialIcons name="auto-awesome" size={16} color="#fff" />
+                <Text style={styles.generateBtnText}>{plan ? "Regen" : "Generate"}</Text>
+              </>
+            )}
+          </Pressable>
         </View>
-        <TouchableOpacity
-          style={[
-            styles.generateBtn,
-            loading && styles.generateBtnDisabled,
-          ]}
-          onPress={generatePlan}
-          disabled={loading}
-          activeOpacity={0.85}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <>
-              <MaterialIcons name="auto-awesome" size={16} color="#fff" />
-              <Text style={styles.generateBtnText}>Generate</Text>
-            </>
-          )}
-        </TouchableOpacity>
       </View>
 
-      {myDeliveries.length > 0 && (
-        <View
-          style={[
-            styles.section,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>
-            TODAY'S STOPS
-          </Text>
-          {myDeliveries.map((d, i) => (
-            <View
-              key={d.id}
-              style={[
-                styles.stopRow,
-                i < myDeliveries.length - 1 && {
-                  borderBottomWidth: 1,
-                  borderBottomColor: colors.border,
-                },
-              ]}
-            >
-              <View style={styles.stopBadge}>
-                <Text style={styles.stopBadgeText}>{i + 1}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[styles.stopName, { color: colors.foreground }]}
-                  numberOfLines={1}
-                >
-                  {d.customerName}
-                </Text>
-                <Text
-                  style={[styles.stopAddr, { color: colors.mutedForeground }]}
-                  numberOfLines={1}
-                >
-                  {d.deliveryAddress}, {d.deliveryCity}
-                </Text>
-                <Text style={styles.stopWindow}>{d.deliveryWindow}</Text>
-              </View>
-              <View
-                style={[
-                  styles.priorityDot,
-                  {
-                    backgroundColor:
-                      d.priority === "high"
-                        ? "#EF4444"
-                        : d.priority === "low"
-                        ? "#10B981"
-                        : "#F59E0B",
-                  },
-                ]}
-              />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={{ padding: 16, paddingBottom: botPad + 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {myDeliveries.length > 0 && (
+          <View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.panelHead}>
+              <Text style={[styles.panelTitle, { color: colors.foreground }]}>Today’s stops</Text>
+              <Pressable onPress={refreshData} hitSlop={8}>
+                <MaterialIcons name="refresh" size={18} color={colors.mutedForeground} />
+              </Pressable>
             </View>
-          ))}
-        </View>
-      )}
 
-      {myDeliveries.length === 0 && !plan && !loading && (
-        <View style={styles.empty}>
-          <MaterialIcons name="route" size={52} color={colors.mutedForeground} />
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-            No deliveries today
-          </Text>
-          <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-            Your assigned deliveries will appear here once the admin assigns
-            them.
-          </Text>
-        </View>
-      )}
-
-      {error ? (
-        <View style={styles.errorBox}>
-          <MaterialIcons name="error-outline" size={16} color="#DC2626" />
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : null}
-
-      {loading && (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color="#1A3A6B" />
-          <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
-            AI is optimizing your route…
-          </Text>
-        </View>
-      )}
-
-      {plan && !loading && (
-        <View
-          style={[
-            styles.planBox,
-            { backgroundColor: colors.card, borderColor: "#1A3A6B" },
-          ]}
-        >
-          <View style={styles.planHeader}>
-            <MaterialIcons name="auto-awesome" size={18} color="#1A3A6B" />
-            <Text style={styles.planTitle}>AI Generated Plan</Text>
-            <TouchableOpacity
-              onPress={generatePlan}
-              style={styles.regenerateBtn}
-            >
-              <MaterialIcons name="refresh" size={16} color="#6B7A8D" />
-            </TouchableOpacity>
+            {myDeliveries.map((d, i) => {
+              const last = i === myDeliveries.length - 1;
+              const priorityColor =
+                d.priority === "high" ? "#EF4444" : d.priority === "low" ? "#16A34A" : "#F59E0B";
+              return (
+                <Pressable
+                  key={d.id}
+                  style={styles.stopRow}
+                  onPress={() => router.push(`/delivery/${d.id}`)}
+                >
+                  <View style={styles.rail}>
+                    <View style={[styles.stopBadge, { backgroundColor: colors.primary }]}>
+                      <Text style={styles.stopBadgeText}>{d.sequence || i + 1}</Text>
+                    </View>
+                    {!last && <View style={[styles.railLine, { backgroundColor: colors.border }]} />}
+                  </View>
+                  <View
+                    style={[
+                      styles.stopBody,
+                      !last && { borderBottomWidth: 1, borderBottomColor: colors.border },
+                    ]}
+                  >
+                    <View style={styles.stopTop}>
+                      <Text style={[styles.stopName, { color: colors.foreground }]} numberOfLines={1}>
+                        {d.customerName}
+                      </Text>
+                      <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
+                    </View>
+                    <Text style={[styles.stopAddr, { color: colors.mutedForeground }]} numberOfLines={1}>
+                      {d.address}
+                      {d.area ? `, ${d.area}` : ""}
+                    </Text>
+                    <View style={styles.stopMeta}>
+                      <Text style={[styles.stopWindow, { color: colors.secondary }]}>
+                        {d.deliveryWindow || "Anytime"}
+                      </Text>
+                      <Text style={[styles.stopDc, { color: colors.mutedForeground }]}>
+                        {d.deliveryNumber}
+                      </Text>
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
-          <Text style={[styles.planText, { color: colors.foreground }]}>
-            {plan}
-          </Text>
-        </View>
-      )}
-    </ScrollView>
+        )}
+
+        {myDeliveries.length === 0 && !plan && !loading && (
+          <View style={styles.empty}>
+            <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
+              <MaterialIcons name="alt-route" size={28} color={colors.mutedForeground} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No stops today</Text>
+            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+              Assigned deliveries will show here once the hub schedules your route.
+            </Text>
+          </View>
+        )}
+
+        {!!error && (
+          <View style={[styles.errorBox, { backgroundColor: colors.destructiveLight }]}>
+            <MaterialIcons name="error-outline" size={16} color={colors.destructive} />
+            <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+          </View>
+        )}
+
+        {loading && (
+          <View
+            style={[
+              styles.panel,
+              styles.loadingBox,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <ActivityIndicator size="large" color={colors.secondary} />
+            <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
+              Optimizing your route…
+            </Text>
+          </View>
+        )}
+
+        {plan && !loading && (
+          <View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.panelHead}>
+              <View style={styles.planTitleRow}>
+                <MaterialIcons name="auto-awesome" size={18} color={colors.secondary} />
+                <Text style={[styles.panelTitle, { color: colors.foreground, marginBottom: 0 }]}>
+                  Suggested plan
+                </Text>
+              </View>
+              <Pressable onPress={generatePlan} hitSlop={8}>
+                <MaterialIcons name="refresh" size={18} color={colors.mutedForeground} />
+              </Pressable>
+            </View>
+            <Text style={[styles.planText, { color: colors.foreground }]}>{plan}</Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
+  root: { flex: 1 },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
   },
-  title: { fontSize: 24, fontFamily: "Inter_700Bold" },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontFamily: "Inter_700Bold",
+  },
   subtitle: {
+    color: "#8BAFC7",
     fontSize: 13,
     fontFamily: "Inter_400Regular",
     marginTop: 2,
@@ -233,8 +260,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#1A3A6B",
-    paddingHorizontal: 16,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
   },
@@ -242,96 +269,91 @@ const styles = StyleSheet.create({
   generateBtnText: {
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
-    fontSize: 14,
+    fontSize: 13,
   },
-  section: {
-    borderRadius: 14,
+  scroll: { flex: 1 },
+  panel: {
+    borderRadius: 16,
     borderWidth: 1,
-    marginBottom: 16,
+    marginBottom: 12,
     overflow: "hidden",
   },
-  sectionLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_600SemiBold",
-    letterSpacing: 1,
-    padding: 12,
-    paddingBottom: 8,
-  },
-  stopRow: {
+  panelHead: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    padding: 12,
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 8,
   },
+  panelTitle: { fontSize: 15, fontFamily: "Inter_700Bold", marginBottom: 0 },
+  planTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  stopRow: { flexDirection: "row", paddingHorizontal: 14 },
+  rail: { width: 28, alignItems: "center", paddingTop: 14 },
   stopBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#1A3A6B",
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
-  stopBadgeText: { color: "#fff", fontSize: 13, fontFamily: "Inter_700Bold" },
-  stopName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  stopAddr: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
-  stopWindow: {
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
-    marginTop: 2,
-    color: "#1A3A6B",
+  stopBadgeText: { color: "#fff", fontSize: 12, fontFamily: "Inter_700Bold" },
+  railLine: { width: 2, flex: 1, marginTop: 4, minHeight: 18 },
+  stopBody: { flex: 1, paddingVertical: 12, paddingLeft: 10 },
+  stopTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  stopName: { flex: 1, fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  priorityDot: { width: 8, height: 8, borderRadius: 4 },
+  stopAddr: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
+  stopMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+    gap: 8,
   },
+  stopWindow: { fontSize: 12, fontFamily: "Inter_500Medium" },
+  stopDc: { fontSize: 11, fontFamily: "Inter_500Medium" },
   empty: {
     alignItems: "center",
-    paddingTop: 80,
-    gap: 10,
-    paddingHorizontal: 32,
+    paddingTop: 72,
+    gap: 8,
+    paddingHorizontal: 28,
   },
-  emptyTitle: {
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
-    marginTop: 4,
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
   },
+  emptyTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   emptyText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: "Inter_400Regular",
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 19,
   },
   errorBox: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#FEE2E2",
     padding: 12,
     borderRadius: 12,
     marginBottom: 12,
   },
-  errorText: {
-    color: "#DC2626",
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    flex: 1,
-  },
-  loadingBox: { alignItems: "center", paddingVertical: 40, gap: 16 },
+  errorText: { fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
+  loadingBox: { alignItems: "center", paddingVertical: 36, gap: 14 },
   loadingText: { fontSize: 14, fontFamily: "Inter_400Regular" },
-  planBox: { borderRadius: 14, borderWidth: 1.5, padding: 16 },
-  planHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
+  planText: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 22,
+    paddingHorizontal: 14,
+    paddingBottom: 16,
   },
-  planTitle: {
-    fontSize: 15,
-    fontFamily: "Inter_700Bold",
-    color: "#1A3A6B",
-    flex: 1,
-  },
-  regenerateBtn: { padding: 4 },
-  planText: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22 },
 });

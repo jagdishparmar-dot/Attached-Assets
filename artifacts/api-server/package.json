@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development pnpm run build && pnpm run start",
+    "dev": "cross-env NODE_ENV=development pnpm run build && node --enable-source-maps --watch ./dist/index.mjs",
     "build": "node ./build.mjs",
+    "build:watch": "node ./build.mjs --watch",
     "start": "node --enable-source-maps ./dist/index.mjs",
+    "start:watch": "node --enable-source-maps --watch ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

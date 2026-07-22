@@ -53,11 +53,12 @@ const colors = {
     card: "#132040",
     cardForeground: "#F0F4F9",
 
-    primary: "#2E6BE6",
+    // Keep headers navy so white title text stays readable in both themes.
+    primary: "#132040",
     primaryForeground: "#FFFFFF",
 
-    secondary: "#1A3A6B",
-    secondaryForeground: "#FFFFFF",
+    secondary: "#5B8DEF",
+    secondaryForeground: "#0A1628",
 
     muted: "#1C2E4A",
     mutedForeground: "#8B9EB5",
@@ -80,7 +81,7 @@ const colors = {
     inTransit: "#5B8DEF",
     inTransitLight: "#1E3A5F",
 
-    border: "#1C2E4A",
+    border: "#243656",
     input: "#1C2E4A",
 
     surface1: "#132040",

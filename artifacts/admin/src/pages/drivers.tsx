@@ -1,22 +1,33 @@
 import React, { useState } from "react";
 import { useLocation } from "wouter";
-import { useListDrivers, DriverStatus } from "@workspace/api-client-react";
+import type { Driver, DriverStatus } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Users, Pencil } from "lucide-react";
+import { Plus, Users, Pencil, Search } from "lucide-react";
 import { Empty } from "@/components/ui/empty";
+import { ListPagination } from "@/components/ListPagination";
+import { useDebouncedValue, usePaginatedQuery } from "@/hooks/use-paginated-query";
 
 export default function Drivers() {
   const [, navigate] = useLocation();
-  const [statusFilter, setStatusFilter] = useState<DriverStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<DriverStatus | "all">("active");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search);
 
-  const { data: drivers, isLoading } = useListDrivers(
-    statusFilter !== "all" ? { status: statusFilter } : undefined
-  );
+  const { data, isLoading } = usePaginatedQuery<Driver>("drivers", "/api/drivers", {
+    page,
+    pageSize: 25,
+    status: statusFilter === "all" ? undefined : statusFilter,
+    q: debouncedSearch || undefined,
+  });
+
+  const drivers = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -30,13 +41,34 @@ export default function Drivers() {
 
       <Card>
         <CardHeader className="pb-3">
-          <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="active">Active</TabsTrigger>
-              <TabsTrigger value="inactive">Inactive</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <Tabs
+              value={statusFilter}
+              onValueChange={(v) => {
+                setStatusFilter(v as any);
+                setPage(1);
+              }}
+            >
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="inactive">Inactive</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search name, ID, hub..."
+                className="pl-8"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -45,7 +77,7 @@ export default function Drivers() {
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
-          ) : !drivers || drivers.length === 0 ? (
+          ) : drivers.length === 0 ? (
             <Empty>
               <div className="flex flex-col items-center gap-2 text-center py-8">
                 <Users className="h-10 w-10 text-muted-foreground/40" />
@@ -88,7 +120,10 @@ export default function Drivers() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={(e) => { e.stopPropagation(); navigate(`/drivers/${driver.id}/edit`); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/drivers/${driver.id}/edit`);
+                          }}
                         >
                           <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
                         </Button>
@@ -98,6 +133,15 @@ export default function Drivers() {
                 </TableBody>
               </Table>
             </div>
+          )}
+          {data && (
+            <ListPagination
+              page={data.page}
+              pageSize={data.pageSize}
+              total={data.total}
+              totalPages={data.totalPages}
+              onPageChange={setPage}
+            />
           )}
         </CardContent>
       </Card>

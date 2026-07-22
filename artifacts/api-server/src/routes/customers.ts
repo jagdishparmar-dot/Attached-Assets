@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, or, ilike, count, asc } from "drizzle-orm";
 import { db, customersTable } from "@workspace/db";
 import {
   CreateCustomerBody,
@@ -8,6 +8,7 @@ import {
   UpdateCustomerBody,
   UpdateCustomerParams,
 } from "@workspace/api-zod";
+import { parsePagination, toPaginated } from "../lib/pagination";
 
 const router: IRouter = Router();
 
@@ -28,9 +29,40 @@ function formatCustomer(c: typeof customersTable.$inferSelect) {
   };
 }
 
-router.get("/customers", async (_req, res): Promise<void> => {
-  const customers = await db.select().from(customersTable).orderBy(customersTable.companyName);
-  res.json(customers.map(formatCustomer));
+router.get("/customers", async (req, res): Promise<void> => {
+  const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+  const pagination = parsePagination(req.query as Record<string, unknown>);
+
+  const where = q
+    ? or(
+        ilike(customersTable.companyName, `%${q}%`),
+        ilike(customersTable.customerCode, `%${q}%`),
+        ilike(customersTable.phone, `%${q}%`),
+        ilike(customersTable.city, `%${q}%`),
+      )
+    : undefined;
+
+  if (!pagination.paginate) {
+    const customers = await db
+      .select()
+      .from(customersTable)
+      .where(where)
+      .orderBy(asc(customersTable.companyName));
+    res.json(customers.map(formatCustomer));
+    return;
+  }
+
+  const [totalRow] = await db.select({ value: count() }).from(customersTable).where(where);
+  const total = Number(totalRow?.value ?? 0);
+  const rows = await db
+    .select()
+    .from(customersTable)
+    .where(where)
+    .orderBy(asc(customersTable.companyName))
+    .limit(pagination.pageSize)
+    .offset(pagination.offset);
+
+  res.json(toPaginated(rows.map(formatCustomer), total, pagination.page, pagination.pageSize));
 });
 
 router.post("/customers", async (req, res): Promise<void> => {

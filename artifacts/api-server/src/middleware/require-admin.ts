@@ -15,6 +15,16 @@ const PUBLIC_ROUTES = new Set([
   "POST /locations/ping",
 ]);
 
+/** Mobile staff tokens are issued as `cv-token-{staffId}-{timestamp}`. */
+function parseStaffBearerToken(authHeader: string | undefined): number | null {
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.slice("Bearer ".length).trim();
+  const match = /^cv-token-(\d+)-\d+$/.exec(token);
+  if (!match) return null;
+  const staffId = parseInt(match[1], 10);
+  return Number.isFinite(staffId) ? staffId : null;
+}
+
 export function requireAdminUnlessPublic(
   req: Request,
   res: Response,
@@ -27,10 +37,18 @@ export function requireAdminUnlessPublic(
   }
 
   const session = parseAdminSessionToken(req.cookies?.[ADMIN_SESSION_COOKIE]);
-  if (!session) {
-    res.status(401).json({ error: "Authentication required" });
+  if (session) {
+    next();
     return;
   }
 
-  next();
+  // Mobile app auth: accept staff bearer token from /staff/login
+  const staffId = parseStaffBearerToken(req.headers.authorization);
+  if (staffId != null) {
+    (req as Request & { staffId?: number }).staffId = staffId;
+    next();
+    return;
+  }
+
+  res.status(401).json({ error: "Authentication required" });
 }

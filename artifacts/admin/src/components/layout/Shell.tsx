@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import logoUrl from "@assets/Screenshot_2026-06-29_at_8.17.10_PM_1782744451491.png";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import {
   LayoutDashboard,
   Truck,
@@ -11,9 +11,11 @@ import {
   Warehouse,
   Bell,
   LogOut,
+  CalendarCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth, initials } from "@/context/AuthContext";
+import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarContent,
@@ -28,28 +30,40 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-const OPS_NAV = [
+type NavItem = { title: string; url: string; icon: React.ComponentType<{ className?: string }> };
+
+const OVERVIEW_NAV: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+];
+
+const LOGISTICS_NAV: NavItem[] = [
   { title: "Deliveries", url: "/deliveries", icon: Truck },
-  { title: "Drivers", url: "/drivers", icon: Users },
-  { title: "Vehicles", url: "/vehicles", icon: Car },
   { title: "Customers", url: "/customers", icon: Building2 },
 ];
 
-const WORKFORCE_NAV = [
-  { title: "Staff", url: "/staff", icon: Users },
-  { title: "Hubs", url: "/hubs", icon: Warehouse },
+const FLEET_NAV: NavItem[] = [
+  { title: "Drivers", url: "/drivers", icon: Users },
+  { title: "Vehicles", url: "/vehicles", icon: Car },
   { title: "Live Tracking", url: "/tracking", icon: MapPin },
 ];
 
-function NavGroup({ label, items, location }: { label: string; items: typeof OPS_NAV; location: string }) {
+const WORKFORCE_NAV: NavItem[] = [
+  { title: "Staff", url: "/staff", icon: Users },
+  { title: "Attendance", url: "/attendance", icon: CalendarCheck },
+];
+
+const NETWORK_NAV: NavItem[] = [
+  { title: "Hubs", url: "/hubs", icon: Warehouse },
+];
+
+function NavGroup({ label, items, location }: { label: string; items: NavItem[]; location: string }) {
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-semibold uppercase tracking-wider mt-4 mb-2 px-6">
+    <SidebarGroup className="px-2 py-0">
+      <SidebarGroupLabel className="px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/40">
         {label}
       </SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className="gap-0.5">
           {items.map((item) => {
             const isActive = location.startsWith(item.url);
             return (
@@ -57,9 +71,22 @@ function NavGroup({ label, items, location }: { label: string; items: typeof OPS
                 <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
                   <Link
                     href={item.url}
-                    className={`flex items-center gap-3 px-6 py-2.5 transition-colors ${isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"}`}
+                    className={cn(
+                      "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                    )}
                   >
-                    <item.icon className="h-5 w-5" />
+                    {isActive && (
+                      <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-primary" />
+                    )}
+                    <item.icon
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        isActive ? "text-primary" : "text-sidebar-foreground/55",
+                      )}
+                    />
                     <span>{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
@@ -80,12 +107,21 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-muted/30">
         <Sidebar className="border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
-          <SidebarHeader className="h-16 flex items-center px-6 border-b border-sidebar-border">
-            <img src={logoUrl} alt="Coldverse" className="h-9 w-auto object-contain" />
+          <SidebarHeader className="border-b border-sidebar-border/80 p-0">
+            <div className="relative overflow-hidden px-4 py-4">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,60,0,0.14),transparent_55%)]" />
+              <div className="relative">
+                <BrandLogo size="md" />
+              </div>
+            </div>
           </SidebarHeader>
-          <SidebarContent>
-            <NavGroup label="Operations" items={OPS_NAV} location={location} />
+
+          <SidebarContent className="gap-3 py-3">
+            <NavGroup label="Overview" items={OVERVIEW_NAV} location={location} />
+            <NavGroup label="Logistics" items={LOGISTICS_NAV} location={location} />
+            <NavGroup label="Fleet" items={FLEET_NAV} location={location} />
             <NavGroup label="Workforce" items={WORKFORCE_NAV} location={location} />
+            <NavGroup label="Network" items={NETWORK_NAV} location={location} />
           </SidebarContent>
         </Sidebar>
 
@@ -98,7 +134,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" className="text-muted-foreground relative">
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-destructive"></span>
+                <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-destructive" />
               </Button>
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-medium leading-none">{admin?.name}</p>
@@ -121,9 +157,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </Button>
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-6">
-            {children}
-          </main>
+          <main className="flex-1 overflow-auto p-6">{children}</main>
         </div>
       </div>
     </SidebarProvider>

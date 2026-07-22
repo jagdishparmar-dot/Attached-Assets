@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useListCustomers } from "@workspace/api-client-react";
+import type { Customer } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,21 +9,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Building2, Plus, Search, Pencil } from "lucide-react";
 import { Empty } from "@/components/ui/empty";
 import { BulkUploadDialog } from "@/components/BulkUploadDialog";
+import { ListPagination } from "@/components/ListPagination";
+import { useDebouncedValue, usePaginatedQuery } from "@/hooks/use-paginated-query";
 
 export default function Customers() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search);
 
-  const { data: customers, isLoading, refetch } = useListCustomers();
-
-  const filteredCustomers = customers?.filter((c) => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    return (
-      c.companyName.toLowerCase().includes(s) ||
-      c.customerCode.toLowerCase().includes(s)
-    );
+  const { data, isLoading, refetch } = usePaginatedQuery<Customer>("customers", "/api/customers", {
+    page,
+    pageSize: 25,
+    q: debouncedSearch || undefined,
   });
+
+  const customers = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -47,7 +48,10 @@ export default function Customers() {
               placeholder="Search by company or code..."
               className="pl-8"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
             />
           </div>
         </CardHeader>
@@ -58,7 +62,7 @@ export default function Customers() {
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
-          ) : !filteredCustomers || filteredCustomers.length === 0 ? (
+          ) : customers.length === 0 ? (
             <Empty>
               <div className="flex flex-col items-center gap-2 text-center py-8">
                 <Building2 className="h-10 w-10 text-muted-foreground/40" />
@@ -81,23 +85,26 @@ export default function Customers() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.map((customer) => (
+                  {customers.map((c) => (
                     <TableRow
-                      key={customer.id}
+                      key={c.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/customers/${customer.id}`)}
+                      onClick={() => navigate(`/customers/${c.id}`)}
                     >
-                      <TableCell className="font-medium">{customer.customerCode}</TableCell>
-                      <TableCell>{customer.companyName}</TableCell>
-                      <TableCell>{customer.contactPerson}</TableCell>
-                      <TableCell>{customer.phone}</TableCell>
-                      <TableCell>{customer.city}</TableCell>
-                      <TableCell className="text-right">{customer.totalDeliveries || 0}</TableCell>
+                      <TableCell className="font-medium font-mono text-xs">{c.customerCode}</TableCell>
+                      <TableCell className="font-medium">{c.companyName}</TableCell>
+                      <TableCell>{c.contactPerson}</TableCell>
+                      <TableCell>{c.phone}</TableCell>
+                      <TableCell>{c.city}</TableCell>
+                      <TableCell className="text-right">{c.totalDeliveries}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={(e) => { e.stopPropagation(); navigate(`/customers/${customer.id}/edit`); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/customers/${c.id}/edit`);
+                          }}
                         >
                           <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
                         </Button>
@@ -107,6 +114,15 @@ export default function Customers() {
                 </TableBody>
               </Table>
             </div>
+          )}
+          {data && (
+            <ListPagination
+              page={data.page}
+              pageSize={data.pageSize}
+              total={data.total}
+              totalPages={data.totalPages}
+              onPageChange={setPage}
+            />
           )}
         </CardContent>
       </Card>

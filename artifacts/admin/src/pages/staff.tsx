@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  useListStaff,
   useCreateStaff,
   useUpdateStaffMember,
   useDeleteStaffMember,
@@ -8,6 +7,8 @@ import {
 } from "@workspace/api-client-react";
 import type { StaffInput, StaffMember } from "@workspace/api-client-react";
 import { Users, Plus, Search, UserCheck, Clock, Trash2, Pencil } from "lucide-react";
+import { ListPagination } from "@/components/ListPagination";
+import { useDebouncedValue, usePaginatedQuery } from "@/hooks/use-paginated-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -95,16 +96,24 @@ function RoleBadge({ role }: { role: string }) {
 export default function StaffPage() {
   const { toast } = useToast();
   const [roleFilter, setRoleFilter] = useState<Role | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("active");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search);
   const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
   const [editTarget, setEditTarget] = useState<StaffMember | null>(null);
   const [form, setForm] = useState<StaffFormState>(EMPTY_FORM);
   const [editForm, setEditForm] = useState<StaffFormState>(EMPTY_FORM);
 
-  const { data: staffList = [], isLoading, refetch } = useListStaff({
+  const { data, isLoading, refetch } = usePaginatedQuery<StaffMember>("staff", "/api/staff", {
+    page,
+    pageSize: 25,
     role: roleFilter === "all" ? undefined : roleFilter,
+    status: statusFilter === "all" ? undefined : statusFilter,
+    q: debouncedSearch || undefined,
   });
+  const staffList = data?.items ?? [];
   const { data: hubList = [] } = useListHubs();
   const hubNames = hubList.map((h) => h.name);
 
@@ -177,14 +186,7 @@ export default function StaffPage() {
     },
   });
 
-  const filtered = staffList.filter((s) => {
-    const q = search.toLowerCase();
-    return (
-      s.name.toLowerCase().includes(q) ||
-      s.employeeId.toLowerCase().includes(q) ||
-      s.hub.toLowerCase().includes(q)
-    );
-  });
+  const filtered = staffList;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,17 +212,15 @@ export default function StaffPage() {
     });
   };
 
-  const counts = ROLES.reduce<Record<string, number>>((acc, r) => {
-    acc[r] = staffList.filter((s) => s.role === r).length;
-    return acc;
-  }, {});
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Staff</h1>
-          <p className="text-muted-foreground mt-1">Manage all warehouse & delivery staff</p>
+          <p className="text-muted-foreground mt-1">
+            Manage warehouse & delivery staff
+            {data ? ` · ${data.total.toLocaleString()} matching` : ""}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <BulkUploadStaffDialog onImported={() => refetch()} />
@@ -231,41 +231,64 @@ export default function StaffPage() {
         </div>
       </div>
 
-      {/* Role stat chips */}
-      <div className="grid grid-cols-6 gap-3">
+      {/* Role filter chips */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
         {ROLES.map((r) => {
           const cfg = ROLE_CONFIG[r];
           const active = roleFilter === r;
           return (
             <button
               key={r}
-              onClick={() => setRoleFilter(active ? "all" : r)}
+              onClick={() => {
+                setRoleFilter(active ? "all" : r);
+                setPage(1);
+              }}
               className={`rounded-xl border p-3 text-left transition-all hover:shadow-sm ${active ? "ring-2 shadow-sm" : ""}`}
-              style={{ borderColor: active ? cfg.color : undefined, ...(active ? { ringColor: cfg.color } : {}) }}
+              style={{ borderColor: active ? cfg.color : undefined }}
             >
-              <div className="text-2xl font-bold" style={{ color: cfg.color }}>{counts[r] ?? 0}</div>
-              <div className="text-xs text-muted-foreground font-medium mt-1">{cfg.label}s</div>
+              <div className="text-sm font-semibold" style={{ color: cfg.color }}>{cfg.label}</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">Filter by role</div>
             </button>
           );
         })}
       </div>
 
       {/* Tab filters + search */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-3">
         <div className="flex gap-1 bg-muted rounded-lg p-1 overflow-x-auto">
           <button
-            onClick={() => setRoleFilter("all")}
+            onClick={() => {
+              setRoleFilter("all");
+              setPage(1);
+            }}
             className={`px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${roleFilter === "all" ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
-            All ({staffList.length})
+            All roles
           </button>
           {ROLES.map((r) => (
             <button
               key={r}
-              onClick={() => setRoleFilter(r)}
+              onClick={() => {
+                setRoleFilter(r);
+                setPage(1);
+              }}
               className={`px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${roleFilter === r ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
               {ROLE_CONFIG[r].label}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1 bg-muted rounded-lg p-1">
+          {(["active", "inactive", "all"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => {
+                setStatusFilter(s);
+                setPage(1);
+              }}
+              className={`px-3 py-1 rounded-md text-sm font-medium capitalize transition-colors ${statusFilter === s ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {s}
             </button>
           ))}
         </div>
@@ -274,7 +297,10 @@ export default function StaffPage() {
           <Input
             placeholder="Search by name, ID or hub..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             className="pl-9"
           />
         </div>
@@ -366,6 +392,17 @@ export default function StaffPage() {
               ))}
             </tbody>
           </table>
+        )}
+        {data && (
+          <div className="px-5 pb-4">
+            <ListPagination
+              page={data.page}
+              pageSize={data.pageSize}
+              total={data.total}
+              totalPages={data.totalPages}
+              onPageChange={setPage}
+            />
+          </div>
         )}
       </div>
 

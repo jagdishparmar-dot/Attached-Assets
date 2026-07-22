@@ -18,6 +18,7 @@ import Customers from "@/pages/customers";
 import CustomerNew from "@/pages/customer-new";
 import CustomerDetail from "@/pages/customer-detail";
 import Staff from "@/pages/staff";
+import Attendance from "@/pages/attendance";
 import Hubs from "@/pages/hubs";
 import Tracking from "@/pages/tracking";
 import NotFound from "@/pages/not-found";
@@ -68,6 +69,7 @@ function ProtectedRoutes() {
         <Route path="/customers" component={Customers} />
 
         <Route path="/staff" component={Staff} />
+        <Route path="/attendance" component={Attendance} />
         <Route path="/hubs" component={Hubs} />
         <Route path="/tracking" component={Tracking} />
 

@@ -14,15 +14,20 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAuth } from "@/context/AuthContext";
+import { isValidHubUrl, useAuth } from "@/context/AuthContext";
 
 // Pre-fill from build-time env var so admins only need one tap on existing builds.
+// On local Expo web, default to the local API server.
 const ENV_DOMAIN = process.env.EXPO_PUBLIC_DOMAIN;
-const DEFAULT_URL = ENV_DOMAIN ? `https://${ENV_DOMAIN}` : "";
-
-function isValidUrl(url: string): boolean {
-  return /^https:\/\/.+\..+/.test(url.trim());
-}
+const DEFAULT_URL = ENV_DOMAIN
+  ? ENV_DOMAIN.startsWith("http")
+    ? ENV_DOMAIN
+    : `https://${ENV_DOMAIN}`
+  : __DEV__
+    ? Platform.OS === "web"
+      ? "http://localhost:8080"
+      : "http://127.0.0.1:8080"
+    : "";
 
 export default function HubSetupScreen() {
   const insets = useSafeAreaInsets();
@@ -38,8 +43,10 @@ export default function HubSetupScreen() {
       setError("Please enter your Hub URL to continue.");
       return;
     }
-    if (!isValidUrl(trimmed)) {
-      setError('Hub URL must start with "https://" — e.g. https://yourhub.replit.app');
+    if (!isValidHubUrl(trimmed)) {
+      setError(
+        'Enter a valid Hub URL — e.g. https://yourhub.example.com or http://localhost:8080 for local dev.',
+      );
       return;
     }
     setError("");
@@ -138,7 +145,7 @@ export default function HubSetupScreen() {
                     setUrl(t);
                     setError("");
                   }}
-                  placeholder="https://yourhub.replit.app"
+                  placeholder="http://localhost:8080"
                   placeholderTextColor="#9BACC4"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -149,7 +156,7 @@ export default function HubSetupScreen() {
                 />
               </View>
               <Text style={styles.fieldHint}>
-                Provided by your Coldverse admin — starts with https://
+                Local API: http://localhost:8080 · Production: https://your-hub-url
               </Text>
             </View>
 

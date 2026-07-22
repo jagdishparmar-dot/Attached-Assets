@@ -28,7 +28,6 @@
       "autoIncrement": true,
       "prebuildCommand": "npx expo prebuild --clean",
       "node": "24.15.0",
-      "environment": "production",
       "env": {
         "EXPO_PUBLIC_DOMAIN": "compass-dms.intoship.cloud"
       },

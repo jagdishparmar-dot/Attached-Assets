@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Platform } from "react-native";
 
 export type StaffRole =
   | "driver"
@@ -57,18 +56,36 @@ const API_URL_KEY = "@coldverse_api_url";
 // React (e.g. fetch helpers). Set during AuthProvider init and on every setApiUrl.
 let _apiUrlCache: string | null = null;
 
-export function getApiBase(): string {
-  if (Platform.OS !== "web") {
-    if (_apiUrlCache) return _apiUrlCache;
-    // Fallback: env var baked at build time (backward-compat for builds that
-    // ship with EXPO_PUBLIC_DOMAIN; the setup screen will persist it properly
-    // on first launch).
-    const domain = process.env.EXPO_PUBLIC_DOMAIN;
-    if (domain) return `https://${domain}`;
-    return "";
+function envApiBase(): string {
+  const domain = process.env.EXPO_PUBLIC_DOMAIN;
+  if (!domain) return "";
+  return domain.startsWith("http") ? domain.replace(/\/+$/, "") : `https://${domain}`;
+}
+
+/** Accept https anywhere; allow http for localhost / LAN during local development. */
+export function isValidHubUrl(url: string): boolean {
+  try {
+    const u = new URL(url.trim());
+    if (u.protocol === "https:") return !!u.hostname;
+    if (u.protocol === "http:") {
+      const host = u.hostname.toLowerCase();
+      return (
+        host === "localhost" ||
+        host === "127.0.0.1" ||
+        host === "[::1]" ||
+        /^\d{1,3}(\.\d{1,3}){3}$/.test(host)
+      );
+    }
+    return false;
+  } catch {
+    return false;
   }
-  // Web preview uses relative URLs through the shared proxy.
-  return "";
+}
+
+export function getApiBase(): string {
+  if (_apiUrlCache) return _apiUrlCache;
+  // Fallback: env var baked at build time (Replit / production builds).
+  return envApiBase();
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -77,8 +94,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [apiUrl, setApiUrlState] = useState<string | null>(null);
 
-  // Web always has relative URLs available — no setup needed.
-  const isApiConfigured = Platform.OS === "web" || !!apiUrl;
+  // Require an explicit Hub URL on all platforms (including Expo web).
+  // Env domain counts as configured for production builds that bake it in.
+  const isApiConfigured = !!apiUrl || !!envApiBase();
 
   useEffect(() => {
     init();
@@ -91,15 +109,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         AsyncStorage.getItem(SESSION_KEY),
       ]);
 
-      if (storedUrl) {
-        _apiUrlCache = storedUrl;
-        setApiUrlState(storedUrl);
+      const resolvedUrl = storedUrl || envApiBase() || null;
+      if (resolvedUrl) {
+        _apiUrlCache = resolvedUrl;
+        setApiUrlState(resolvedUrl);
       }
 
       // Only restore the session if the API URL is already configured; otherwise
       // the session tokens would be useless (no server to talk to) and the user
       // must go through setup → login.
-      if (storedUrl && raw) {
+      if (resolvedUrl && raw) {
         try {
           const parsed = JSON.parse(raw) as { staff: StaffMember; token: string };
           if (
@@ -145,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (phone: string, password: string): Promise<LoginResult> => {
     const base = getApiBase();
-    if (Platform.OS !== "web" && !base) {
+    if (!base) {
       return { ok: false, errorType: "misconfigured" };
     }
     try {
@@ -184,6 +203,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshStaff = (updated: Partial<StaffMember>) => {
     if (!staff) return;
+    const changed = (Object.keys(updated) as (keyof StaffMember)[]).some(
+      (key) => staff[key] !== updated[key],
+    );
+    // Avoid a new staff object when nothing changed — callers that depend on
+    // `staff` would otherwise loop (fetch → refreshStaff → re-fetch).
+    if (!changed) return;
     const next = { ...staff, ...updated };
     setStaff(next);
     AsyncStorage.setItem(SESSION_KEY, JSON.stringify({ staff: next, token }));

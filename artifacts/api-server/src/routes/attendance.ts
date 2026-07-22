@@ -1,11 +1,18 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { staffTable, attendanceRecords, hubsTable } from "@workspace/db/schema";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { parsePagination, paginateArray } from "../lib/pagination";
 
 const router = Router();
 
-const TODAY = () => new Date().toISOString().split("T")[0];
+const TODAY = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
 
 /** Haversine distance in metres between two GPS points */
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -171,18 +178,176 @@ router.get("/attendance/my", async (req, res) => {
   return res.json(await Promise.all(rows.map((r) => toAttendanceApi(r, staffRow))));
 });
 
-// GET /attendance/all?date=YYYY-MM-DD&hub=
+// GET /attendance/all?date=YYYY-MM-DD&startDate=&endDate=&hub=&status=&q=&page=&pageSize=
 router.get("/attendance/all", async (req, res) => {
-  const { date, hub } = req.query as Record<string, string>;
-  const targetDate = date ?? TODAY();
+  const { date, startDate, endDate, hub, status, q } = req.query as Record<string, string>;
+  const pagination = parsePagination(req.query as Record<string, unknown>, { pageSize: 50 });
 
-  const rows = await db.select().from(attendanceRecords).where(eq(attendanceRecords.date, targetDate));
+  let rows;
+  if (startDate && endDate) {
+    rows = await db.select().from(attendanceRecords).where(
+      and(
+        gte(attendanceRecords.date, startDate),
+        lte(attendanceRecords.date, endDate),
+      ),
+    ).orderBy(desc(attendanceRecords.date));
+  } else {
+    const targetDate = date ?? TODAY();
+    rows = await db.select().from(attendanceRecords).where(eq(attendanceRecords.date, targetDate))
+      .orderBy(desc(attendanceRecords.date));
+  }
+
   const staffRows = await db.select().from(staffTable);
   const staffMap = new Map(staffRows.map((s) => [s.id, s]));
 
   let results = await Promise.all(rows.map((r) => toAttendanceApi(r, staffMap.get(r.staffId))));
   if (hub) results = results.filter((r) => r.hub === hub);
-  return res.json(results);
+  if (status) results = results.filter((r) => r.status === status);
+  if (q?.trim()) {
+    const needle = q.trim().toLowerCase();
+    results = results.filter(
+      (r) =>
+        r.staffName.toLowerCase().includes(needle) ||
+        r.role.toLowerCase().includes(needle) ||
+        r.hub.toLowerCase().includes(needle),
+    );
+  }
+
+  if (!pagination.paginate) {
+    return res.json(results);
+  }
+
+  const page = paginateArray(results, pagination.page, pagination.pageSize);
+  const checkIns = results.filter((r) => r.checkIn);
+  const geofenced = checkIns.filter((r) => r.withinGeofence);
+
+  const roleOrder = ["driver", "picker", "sorter", "loader", "supervisor", "security", "house_keeper"];
+  const byRoleMap = new Map<
+    string,
+    {
+      role: string;
+      total: number;
+      onSite: number;
+      present: number;
+      late: number;
+      halfDay: number;
+      absent: number;
+      stillIn: number;
+    }
+  >();
+
+  for (const r of results) {
+    const role = r.role || "unknown";
+    let row = byRoleMap.get(role);
+    if (!row) {
+      row = {
+        role,
+        total: 0,
+        onSite: 0,
+        present: 0,
+        late: 0,
+        halfDay: 0,
+        absent: 0,
+        stillIn: 0,
+      };
+      byRoleMap.set(role, row);
+    }
+    row.total += 1;
+    if (r.status === "present") row.present += 1;
+    else if (r.status === "late") row.late += 1;
+    else if (r.status === "half_day") row.halfDay += 1;
+    else if (r.status === "absent") row.absent += 1;
+    if (r.status !== "absent") row.onSite += 1;
+    if (r.checkIn && !r.checkOut) row.stillIn += 1;
+  }
+
+  const byRole = Array.from(byRoleMap.values()).sort((a, b) => {
+    const ai = roleOrder.indexOf(a.role);
+    const bi = roleOrder.indexOf(b.role);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi) || b.onSite - a.onSite;
+  });
+
+  return res.json({
+    ...page,
+    summary: {
+      total: results.length,
+      present: results.filter((r) => r.status === "present").length,
+      late: results.filter((r) => r.status === "late").length,
+      halfDay: results.filter((r) => r.status === "half_day").length,
+      absent: results.filter((r) => r.status === "absent").length,
+      onSite: results.filter((r) => r.status !== "absent").length,
+      stillIn: results.filter((r) => r.checkIn && !r.checkOut).length,
+      geofenceComplianceRate:
+        checkIns.length > 0 ? Math.round((geofenced.length / checkIns.length) * 100) : 100,
+      checkIns: checkIns.length,
+      geofenced: geofenced.length,
+      byRole,
+    },
+  });
+});
+
+// PUT /attendance/:id
+router.put("/attendance/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+  const { status, checkIn, checkOut, workingHours, date } = req.body;
+
+  const [existing] = await db.select().from(attendanceRecords).where(eq(attendanceRecords.id, id));
+  if (!existing) return res.status(404).json({ error: "Record not found" });
+
+  const [updated] = await db.update(attendanceRecords).set({
+    status: status ?? existing.status,
+    checkIn: checkIn !== undefined ? checkIn : existing.checkIn,
+    checkOut: checkOut !== undefined ? checkOut : existing.checkOut,
+    workingHours: workingHours !== undefined ? workingHours : existing.workingHours,
+    date: date ?? existing.date,
+  }).where(eq(attendanceRecords.id, id)).returning();
+
+  return res.json(await toAttendanceApi(updated));
+});
+
+// POST /attendance/manual
+router.post("/attendance/manual", async (req, res) => {
+  const { staffId, date, status, checkIn, checkOut, workingHours } = req.body;
+  if (!staffId || !date || !status) {
+    return res.status(400).json({ error: "staffId, date, status are required" });
+  }
+
+  const [staffRow] = await db.select().from(staffTable).where(eq(staffTable.id, staffId));
+  if (!staffRow) return res.status(404).json({ error: "Staff not found" });
+
+  // Check if record already exists for this staff and date
+  const [existing] = await db.select().from(attendanceRecords).where(
+    and(eq(attendanceRecords.staffId, staffId), eq(attendanceRecords.date, date))
+  );
+  if (existing) {
+    return res.status(400).json({ error: "Attendance record already exists for this date" });
+  }
+
+  const [inserted] = await db.insert(attendanceRecords).values({
+    staffId,
+    date,
+    status,
+    checkIn: checkIn ?? null,
+    checkOut: checkOut ?? null,
+    workingHours: workingHours ?? null,
+    withinGeofence: true,
+    geofenceDistance: 0,
+  }).returning();
+
+  return res.json(await toAttendanceApi(inserted, staffRow));
+});
+
+// DELETE /attendance/:id
+router.delete("/attendance/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const [existing] = await db.select().from(attendanceRecords).where(eq(attendanceRecords.id, id));
+  if (!existing) return res.status(404).json({ error: "Record not found" });
+
+  await db.delete(attendanceRecords).where(eq(attendanceRecords.id, id));
+  return res.json({ success: true });
 });
 
 export default router;

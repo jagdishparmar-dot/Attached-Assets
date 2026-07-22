@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { staffTable, attendanceRecords, driversTable, deliveriesTable } from "@workspace/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, ilike, asc, count } from "drizzle-orm";
 import { BulkCreateStaffBody } from "@workspace/api-zod";
+import { parsePagination, toPaginated } from "../lib/pagination";
 
 const router = Router();
 
@@ -99,20 +100,51 @@ router.post("/staff/login", async (req, res) => {
 
 // GET /staff
 router.get("/staff", async (req, res) => {
-  const { role, hub, status } = req.query as Record<string, string>;
-  let rows = await db.select().from(staffTable);
-  if (role) rows = rows.filter((r) => r.role === role);
-  if (hub) rows = rows.filter((r) => r.hub === hub);
-  if (status) rows = rows.filter((r) => r.status === status);
+  const { role, hub, status, q } = req.query as Record<string, string>;
+  const pagination = parsePagination(req.query as Record<string, unknown>);
+
+  const conditions = [];
+  if (role) conditions.push(eq(staffTable.role, role));
+  if (hub) conditions.push(eq(staffTable.hub, hub));
+  if (status) conditions.push(eq(staffTable.status, status));
+  if (q?.trim()) {
+    const pattern = `%${q.trim()}%`;
+    conditions.push(
+      or(
+        ilike(staffTable.name, pattern),
+        ilike(staffTable.employeeId, pattern),
+        ilike(staffTable.phone, pattern),
+        ilike(staffTable.hub, pattern),
+      )!,
+    );
+  }
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   const today = TODAY();
   const todayAtt = await db.select().from(attendanceRecords).where(eq(attendanceRecords.date, today));
   const attMap = new Map(todayAtt.map((a) => [a.staffId, a]));
 
-  return res.json(rows.map((r) => {
+  const mapRow = (r: typeof staffTable.$inferSelect) => {
     const att = attMap.get(r.id);
     return toApi(r, !!att?.checkIn, att?.checkIn ?? null, att?.checkInLat ?? null, att?.checkInLng ?? null);
-  }));
+  };
+
+  if (!pagination.paginate) {
+    const rows = await db.select().from(staffTable).where(whereClause).orderBy(asc(staffTable.name));
+    return res.json(rows.map(mapRow));
+  }
+
+  const [totalRow] = await db.select({ value: count() }).from(staffTable).where(whereClause);
+  const total = Number(totalRow?.value ?? 0);
+  const rows = await db
+    .select()
+    .from(staffTable)
+    .where(whereClause)
+    .orderBy(asc(staffTable.name))
+    .limit(pagination.pageSize)
+    .offset(pagination.offset);
+
+  return res.json(toPaginated(rows.map(mapRow), total, pagination.page, pagination.pageSize));
 });
 
 // POST /staff

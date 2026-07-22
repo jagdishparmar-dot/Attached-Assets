@@ -91,6 +91,7 @@ router.get("/locations", async (req, res) => {
       return {
         staffId: loc.staffId,
         staffName: s.name,
+        employeeId: s.employeeId,
         role: s.role,
         hub: s.hub,
         lat: loc.lat,

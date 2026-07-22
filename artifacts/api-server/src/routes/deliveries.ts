@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc, count, or, ilike, gte, lte } from "drizzle-orm";
 import { db, deliveriesTable, customersTable, driversTable, vehiclesTable, activityTable } from "@workspace/db";
 import {
   CreateDeliveryBody,
@@ -10,6 +10,7 @@ import {
   ListDeliveriesQueryParams,
   BulkCreateDeliveriesBody,
 } from "@workspace/api-zod";
+import { parsePagination, toPaginated } from "../lib/pagination";
 
 const router: IRouter = Router();
 
@@ -69,21 +70,60 @@ router.get("/deliveries/next-dc-number", async (req, res): Promise<void> => {
 
 router.get("/deliveries", async (req, res): Promise<void> => {
   const query = ListDeliveriesQueryParams.safeParse(req.query);
-  let deliveries = await db.select().from(deliveriesTable).orderBy(deliveriesTable.createdAt);
+  const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+  const dateFrom = typeof req.query.dateFrom === "string" ? req.query.dateFrom : undefined;
+  const dateTo = typeof req.query.dateTo === "string" ? req.query.dateTo : undefined;
+  const pagination = parsePagination(req.query as Record<string, unknown>);
 
+  const conditions = [];
   if (query.success) {
-    if (query.data.status) {
-      deliveries = deliveries.filter((d) => d.status === query.data.status);
-    }
-    if (query.data.date) {
-      deliveries = deliveries.filter((d) => d.deliveryDate === query.data.date);
-    }
+    if (query.data.status) conditions.push(eq(deliveriesTable.status, query.data.status));
+    if (query.data.date) conditions.push(eq(deliveriesTable.deliveryDate, query.data.date));
     if (query.data.assignedDriverId !== undefined) {
-      deliveries = deliveries.filter((d) => d.assignedDriverId === query.data.assignedDriverId);
+      conditions.push(eq(deliveriesTable.assignedDriverId, query.data.assignedDriverId));
     }
   }
+  if (dateFrom) conditions.push(gte(deliveriesTable.deliveryDate, dateFrom));
+  if (dateTo) conditions.push(lte(deliveriesTable.deliveryDate, dateTo));
+  if (q) {
+    const pattern = `%${q}%`;
+    conditions.push(
+      or(
+        ilike(deliveriesTable.deliveryNumber, pattern),
+        ilike(deliveriesTable.orderNumber, pattern),
+        ilike(deliveriesTable.customerName, pattern),
+      ),
+    );
+  }
 
-  res.json(deliveries.reverse().map(formatDelivery));
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // Legacy / mobile: no page param → full array (optionally filtered)
+  if (!pagination.paginate) {
+    const deliveries = await db
+      .select()
+      .from(deliveriesTable)
+      .where(where)
+      .orderBy(desc(deliveriesTable.createdAt));
+    res.json(deliveries.map(formatDelivery));
+    return;
+  }
+
+  const [totalRow] = await db
+    .select({ value: count() })
+    .from(deliveriesTable)
+    .where(where);
+
+  const total = Number(totalRow?.value ?? 0);
+  const rows = await db
+    .select()
+    .from(deliveriesTable)
+    .where(where)
+    .orderBy(desc(deliveriesTable.createdAt))
+    .limit(pagination.pageSize)
+    .offset(pagination.offset);
+
+  res.json(toPaginated(rows.map(formatDelivery), total, pagination.page, pagination.pageSize));
 });
 
 router.post("/deliveries", async (req, res): Promise<void> => {
