@@ -27,19 +27,13 @@ run_db_migration() {
   node /app/docker/run-drizzle.mjs
 }
 
-run_db_seed() {
-  echo "Seeding database..."
-  node /app/docker/run-seed.mjs
-}
-
 if [ "$RUN_DB_MIGRATION" = "true" ]; then
   wait_for_db
   run_db_migration
 fi
 
 if [ "$RUN_DB_SEED" = "true" ]; then
-  wait_for_db
-  run_db_seed
+  echo "RUN_DB_SEED is set, but database seed scripts have been removed. Skipping."
 fi
 
 exec node --import /app/load-env.mjs --enable-source-maps /app/artifacts/api-server/dist/index.mjs
